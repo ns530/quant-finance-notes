@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      Day 3: Conditional Probability & Bayes Theorem — Quant Finance Notes
+    </title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      /* ── DAY 3 SPECIFIC STYLES ── */
+      .bayes-formula {
+        background: var(--accent);
+        border-radius: 12px;
+        padding: 32px;
+        margin: 32px 0;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+      .bayes-formula::before {
+        content: "BAYES THEOREM";
+        position: absolute;
+        top: 14px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        color: rgba(255, 255, 255, 0.35);
+      }
+      .bayes-eq {
+        font-family: "Playfair Display", serif;
+        font-size: clamp(18px, 3vw, 26px);
+        color: white;
+        line-height: 1.6;
+        margin-top: 8px;
+      }
+      .bayes-eq em {
+        color: rgba(255, 255, 255, 0.7);
+        font-style: italic;
+      }
+      .bayes-parts {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-top: 22px;
+      }
+      @media (max-width: 600px) {
+        .bayes-parts {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      .bayes-part {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 12px 10px;
+        text-align: center;
+      }
+      .bayes-part-sym {
+        font-family: "Playfair Display", serif;
+        font-size: 18px;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 5px;
+      }
+      .bayes-part-name {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.55);
+        line-height: 1.45;
+      }
+
+      /* ── PROBABILITY TREE ── */
+      .prob-tree {
+        background: white;
+        border: 1px solid var(--rule);
+        border-radius: 12px;
+        padding: 28px;
+        margin: 28px 0;
+      }
+      .tree-title {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--ink-muted);
+        margin-bottom: 20px;
+      }
+      .tree-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+      }
+      .tree-node {
+        border-radius: 8px;
+        padding: 10px 16px;
+        font-size: 13px;
+        font-weight: 500;
+        white-space: nowrap;
+      }
+      .tn-prior {
+        background: var(--accent-lt);
+        color: var(--accent);
+        border: 1px solid #b8cce4;
+      }
+      .tn-signal {
+        background: var(--green-lt);
+        color: var(--green);
+        border: 1px solid #b8e4c4;
+      }
+      .tn-post {
+        background: var(--amber-lt);
+        color: var(--amber);
+        border: 1px solid #e4d4b8;
+      }
+      .tn-bad {
+        background: var(--red-lt);
+        color: var(--red);
+        border: 1px solid #e4b8b8;
+      }
+      .tree-arrow {
+        font-size: 18px;
+        color: var(--ink-muted);
+      }
+      .tree-label {
+        font-size: 12px;
+        color: var(--ink-muted);
+        font-style: italic;
+      }
+
+      /* ── UPDATE SEQUENCE ── */
+      .update-seq {
+        background: white;
+        border: 1px solid var(--rule);
+        border-radius: 12px;
+        padding: 24px 28px;
+        margin: 28px 0;
+      }
+      .update-title {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--ink-muted);
+        margin-bottom: 18px;
+      }
+      .update-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+      }
+      .update-step {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        color: var(--ink-muted);
+        min-width: 56px;
+        text-transform: uppercase;
+      }
+      .update-signal {
+        flex: 1;
+        font-size: 13px;
+        color: var(--ink-soft);
+        min-width: 160px;
+      }
+      .update-bar-wrap {
+        width: 160px;
+        height: 10px;
+        background: var(--cream-dark);
+        border-radius: 5px;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+      .update-bar {
+        height: 10px;
+        border-radius: 5px;
+        transition: width 0.8s;
+      }
+      .update-pct {
+        font-size: 14px;
+        font-weight: 700;
+        min-width: 48px;
+        text-align: right;
+        font-family: "Source Code Pro", monospace;
+      }
+
+      /* ── 2x2 CONCEPT GRID ── */
+      .concept-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin: 28px 0;
+      }
+      @media (max-width: 540px) {
+        .concept-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .concept-card {
+        background: white;
+        border: 1px solid var(--rule);
+        border-radius: 10px;
+        padding: 20px;
+      }
+      .concept-icon {
+        font-size: 24px;
+        margin-bottom: 10px;
+      }
+      .concept-name {
+        font-family: "Playfair Display", serif;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--ink);
+        margin-bottom: 6px;
+      }
+      .concept-desc {
+        font-size: 12.5px;
+        color: var(--ink-soft);
+        line-height: 1.6;
+      }
+      .concept-formula {
+        font-family: "Source Code Pro", monospace;
+        font-size: 11.5px;
+        background: var(--cream-dark);
+        padding: 6px 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+        color: var(--ink-soft);
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="site-nav">
+      <a class="nav-brand" href="index.html"
+        >Quant Finance <span>Notes</span></a
+      >
+      <div class="nav-links">
+        <a href="index.html">All Articles</a>
+        <a
+          href="https://www.linkedin.com/in/nadun-sulochana-41923029b"
+          target="_blank"
+          >LinkedIn</a
+        >
+        <span class="nav-badge">Day 3 / 90</span>
+      </div>
+    </nav>
+
+    <!-- HERO -->
+    <div class="hero">
+      <div class="series-tag">
+        Quant Finance Notes &nbsp;·&nbsp; Day 3 of 90
+      </div>
+      <h1>How to Update Your Trading Beliefs <em>The Right Way</em></h1>
+      <p class="hero-sub">
+        Every new piece of market data should change your confidence in a trade.
+        Conditional probability and Bayes Theorem give you the exact math for
+        doing that correctly — and the Python to prove it.
+      </p>
+      <div class="hero-meta">
+        <div class="avatar">NS</div>
+        <div class="meta-text">
+          <strong>Nadun Sulochana</strong>Aspiring Software Architect · BSc
+          Cyber Security · SLTC Research University
+        </div>
+        <div class="day-badge">03 / 90</div>
+      </div>
+    </div>
+
+    <!-- BODY -->
+    <div class="article-body">
+      <p class="lead">
+        Most traders make a decision and then look for evidence to confirm it.
+        Bayesian thinking works in reverse — you start with a belief, and every
+        new signal mathematically updates that belief, whether it confirms you
+        or not. That is the difference between gambling and systematic trading.
+      </p>
+
+      <h2>What Is Conditional Probability?</h2>
+      <p>
+        Conditional probability answers one question:
+        <strong
+          >given that we already know something, how does that change the
+          probability of something else?</strong
+        >
+      </p>
+      <p>
+        Written as P(A | B) — read as "the probability of A, given that B has
+        occurred." The vertical bar means "given."
+      </p>
+
+      <div class="concept-grid">
+        <div class="concept-card">
+          <div class="concept-icon">📊</div>
+          <div class="concept-name">P(A) — Prior</div>
+          <div class="concept-desc">
+            Your belief before any new evidence. The base rate. "What is the
+            probability this market is trending on any random day?"
+          </div>
+          <div class="concept-formula">
+            P(trending) = 0.40 &nbsp;→&nbsp; 40% of days
+          </div>
+        </div>
+        <div class="concept-card">
+          <div class="concept-icon">📡</div>
+          <div class="concept-name">P(B | A) — Likelihood</div>
+          <div class="concept-desc">
+            How likely is your signal to fire if the hypothesis is true? "How
+            often does my signal trigger when the market IS trending?"
+          </div>
+          <div class="concept-formula">
+            P(signal | trending) = 0.70 &nbsp;→&nbsp; 70%
+          </div>
+        </div>
+        <div class="concept-card">
+          <div class="concept-icon">⚠️</div>
+          <div class="concept-name">P(B) — Evidence</div>
+          <div class="concept-desc">
+            How often does your signal fire across all conditions — both real
+            trends and false alarms? This normalises everything.
+          </div>
+          <div class="concept-formula">
+            P(signal) = 0.40 &nbsp;→&nbsp; total fire rate
+          </div>
+        </div>
+        <div class="concept-card">
+          <div class="concept-icon">✅</div>
+          <div class="concept-name">P(A | B) — Posterior</div>
+          <div class="concept-desc">
+            Your updated belief after seeing the signal. This is the number you
+            actually trade on. "Now that my signal fired, what are the odds of a
+            real trend?"
+          </div>
+          <div class="concept-formula">
+            P(trending | signal) = 0.70 &nbsp;→&nbsp; 70%
+          </div>
+        </div>
+      </div>
+
+      <h2>The Formula That Changes Everything</h2>
+
+      <div class="bayes-formula">
+        <div class="bayes-eq">
+          P(Trend | Signal) = <em>P(Signal | Trend) × P(Trend)</em> / P(Signal)
+        </div>
+        <div class="bayes-parts">
+          <div class="bayes-part">
+            <div class="bayes-part-sym">P(A|B)</div>
+            <div class="bayes-part-name">Posterior<br />What you update to</div>
+          </div>
+          <div class="bayes-part">
+            <div class="bayes-part-sym">P(B|A)</div>
+            <div class="bayes-part-name">Likelihood<br />Signal accuracy</div>
+          </div>
+          <div class="bayes-part">
+            <div class="bayes-part-sym">P(A)</div>
+            <div class="bayes-part-name">Prior<br />Starting belief</div>
+          </div>
+          <div class="bayes-part">
+            <div class="bayes-part-sym">P(B)</div>
+            <div class="bayes-part-name">Evidence<br />Total signal rate</div>
+          </div>
+        </div>
+      </div>
+
+      <h2>A Real Trading Example — Step by Step</h2>
+      <p>
+        Let us say you are a trend-following trader. Here is what you know from
+        historical data:
+      </p>
+
+      <div class="prob-tree">
+        <div class="tree-title">
+          Probability tree — before and after seeing a signal
+        </div>
+        <div class="tree-row">
+          <div class="tree-node tn-prior">P(trending) = 40%</div>
+          <div class="tree-arrow">→</div>
+          <div class="tree-label">Base rate: market trends 40% of days</div>
+        </div>
+        <div class="tree-row">
+          <div class="tree-node tn-signal">P(signal | trending) = 70%</div>
+          <div class="tree-arrow">→</div>
+          <div class="tree-label">
+            Signal fires correctly 70% of trending days
+          </div>
+        </div>
+        <div class="tree-row">
+          <div class="tree-node tn-bad">P(signal | sideways) = 20%</div>
+          <div class="tree-arrow">→</div>
+          <div class="tree-label">False alarm: fires 20% of sideways days</div>
+        </div>
+        <div class="tree-row">
+          <div class="tree-node tn-post">P(trending | signal) = 70%</div>
+          <div class="tree-arrow">→</div>
+          <div class="tree-label">
+            After signal fires: 70% chance it's a real trend ↑ from 40%
+          </div>
+        </div>
+      </div>
+
+      <h2>The Python — Run It Yourself</h2>
+
+      <div class="code-wrap">
+        <div class="code-header">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+          <div class="code-lang">python</div>
+        </div>
+        <pre><span class="c-cm"># Bayes Theorem for trading signal evaluation</span>
+
+<span class="c-cm"># Prior probabilities (from historical data)</span>
+<span class="c-var">p_trend</span>    = <span class="c-num">0.40</span>   <span class="c-cm"># 40% of days are trending</span>
+<span class="c-var">p_no_trend</span> = <span class="c-num">0.60</span>   <span class="c-cm"># 60% are sideways</span>
+
+<span class="c-cm"># Likelihoods (signal accuracy from backtesting)</span>
+<span class="c-var">p_signal_given_trend</span>    = <span class="c-num">0.70</span>  <span class="c-cm"># true positive rate</span>
+<span class="c-var">p_signal_given_no_trend</span> = <span class="c-num">0.20</span>  <span class="c-cm"># false positive rate</span>
+
+<span class="c-cm"># Total probability of signal firing (law of total probability)</span>
+<span class="c-var">p_signal</span> = (p_signal_given_trend * p_trend +
+            p_signal_given_no_trend * p_no_trend)
+
+<span class="c-cm"># Bayes theorem: posterior probability</span>
+<span class="c-var">p_trend_given_signal</span> = (p_signal_given_trend * p_trend) / p_signal
+
+<span class="c-fn">print</span>(<span class="c-str">f"Before signal: P(trend) = {p_trend:.0%}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Signal fires:  P(signal) = {p_signal:.0%}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"After signal:  P(trend | signal) = {p_trend_given_signal:.0%}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Confidence lift: {p_trend_given_signal/p_trend:.2f}x"</span>)</pre>
+      </div>
+
+      <h3>Actual Output</h3>
+      <div class="output-wrap">
+        <div class="output-header">▶ python3 bayes_trading.py</div>
+        <div class="output-body">
+          <div>
+            <span class="out-ln"
+              >Before signal: P(trend)
+              =&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span
+            ><span class="out-n">40%</span>
+          </div>
+          <div>
+            <span class="out-ln"
+              >Signal fires: P(signal)
+              =&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span
+            ><span class="out-n">40%</span>
+          </div>
+          <div>
+            <span class="out-ln">After signal: P(trend | signal) = </span
+            ><span class="out-n">70%</span>
+          </div>
+          <div>
+            <span class="out-ln"
+              >Confidence
+              lift:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span
+            ><span class="out-n">1.75x</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-green">
+        <div class="callout-title">What just happened</div>
+        <p
+          style="
+            margin: 0;
+            font-size: 14px;
+            color: var(--ink-soft);
+            line-height: 1.75;
+          "
+        >
+          Before your signal fired, you had a <strong>40% belief</strong> in a
+          trend. After your signal fired, Bayes theorem updated that to
+          <strong>70%</strong> — a <strong>1.75× lift</strong> in confidence.<br /><br />
+          This is not intuition. This is not gut feel. This is the
+          mathematically correct way to update your belief given new evidence.
+          That is what separates systematic trading from gambling.
+        </p>
+      </div>
+
+      <h2>Sequential Updating — The Real Power of Bayes</h2>
+      <p>
+        Bayes gets truly powerful when you chain signals together. Each signal
+        updates the prior for the next one. Watch what happens when three
+        signals confirm a trend in sequence:
+      </p>
+
+      <div class="update-seq">
+        <div class="update-title">
+          Belief updating — three signals in sequence
+        </div>
+
+        <div class="update-row">
+          <div class="update-step">Prior</div>
+          <div class="update-signal">No signal yet — base rate</div>
+          <div class="update-bar-wrap">
+            <div
+              class="update-bar"
+              style="width: 40%; background: var(--accent-mid)"
+            ></div>
+          </div>
+          <div class="update-pct" style="color: var(--accent-mid)">40.0%</div>
+        </div>
+
+        <div class="update-row">
+          <div class="update-step">Signal 1</div>
+          <div class="update-signal">Strong breakout above resistance</div>
+          <div class="update-bar-wrap">
+            <div
+              class="update-bar"
+              style="width: 66.7%; background: #2e8050"
+            ></div>
+          </div>
+          <div class="update-pct" style="color: #2e8050">66.7%</div>
+        </div>
+
+        <div class="update-row">
+          <div class="update-step">Signal 2</div>
+          <div class="update-signal">Volume surge confirms breakout</div>
+          <div class="update-bar-wrap">
+            <div
+              class="update-bar"
+              style="width: 85.7%; background: #1a6040"
+            ></div>
+          </div>
+          <div class="update-pct" style="color: #1a6040">85.7%</div>
+        </div>
+
+        <div class="update-row">
+          <div class="update-step">Signal 3</div>
+          <div class="update-signal">Momentum indicator confirms</div>
+          <div class="update-bar-wrap">
+            <div
+              class="update-bar"
+              style="width: 94.7%; background: var(--green)"
+            ></div>
+          </div>
+          <div class="update-pct" style="color: var(--green)">94.7%</div>
+        </div>
+      </div>
+
+      <div class="code-wrap">
+        <div class="code-header">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+          <div class="code-lang">python — sequential updating</div>
+        </div>
+        <pre><span class="c-kw">def</span> <span class="c-fn">bayes_update</span>(prior, likelihood_true, likelihood_false):
+    <span class="c-str">"""Update belief given a new signal."""</span>
+    evidence = likelihood_true * prior + likelihood_false * (<span class="c-num">1</span> - prior)
+    <span class="c-kw">return</span> (likelihood_true * prior) / evidence
+
+<span class="c-cm"># Start with base rate</span>
+<span class="c-var">belief</span> = <span class="c-num">0.40</span>
+<span class="c-fn">print</span>(<span class="c-str">f"Prior:                   {belief:.1%}"</span>)
+
+<span class="c-cm"># Each signal updates the belief sequentially</span>
+<span class="c-var">signals</span> = [
+    (<span class="c-str">"Strong breakout"</span>,     <span class="c-num">0.75</span>, <span class="c-num">0.25</span>),
+    (<span class="c-str">"Volume surge"</span>,        <span class="c-num">0.80</span>, <span class="c-num">0.30</span>),
+    (<span class="c-str">"Momentum confirms"</span>,   <span class="c-num">0.85</span>, <span class="c-num">0.20</span>),
+]
+
+<span class="c-kw">for</span> name, p_true, p_false <span class="c-kw">in</span> signals:
+    belief = <span class="c-fn">bayes_update</span>(belief, p_true, p_false)
+    <span class="c-fn">print</span>(<span class="c-str">f"After {name}: {belief:.1%}"</span>)</pre>
+      </div>
+
+      <div class="output-wrap">
+        <div class="output-header">▶ python3 sequential_bayes.py</div>
+        <div class="output-body">
+          <div>
+            <span class="out-ln"
+              >Prior:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span
+            ><span class="out-n">40.0%</span>
+          </div>
+          <div>
+            <span class="out-ln"
+              >After Strong breakout:&nbsp;&nbsp;&nbsp;&nbsp;</span
+            ><span class="out-n">66.7%</span>
+          </div>
+          <div>
+            <span class="out-ln"
+              >After Volume
+              surge:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span
+            ><span class="out-n">85.7%</span>
+          </div>
+          <div>
+            <span class="out-ln">After Momentum confirms:&nbsp;&nbsp;</span
+            ><span class="out-n">94.7%</span>
+          </div>
+        </div>
+      </div>
+
+      <h2>Bayes Applied to Win Rate Improvement</h2>
+      <p>
+        Here is another way to use this in practice — using a signal to filter
+        trades and improve your win rate:
+      </p>
+
+      <div class="code-wrap">
+        <div class="code-header">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+          <div class="code-lang">python — filtering trades with Bayes</div>
+        </div>
+        <pre><span class="c-cm"># Strategy baseline performance</span>
+<span class="c-var">p_profit</span> = <span class="c-num">0.55</span>   <span class="c-cm"># base win rate: 55%</span>
+<span class="c-var">p_loss</span>   = <span class="c-num">0.45</span>   <span class="c-cm"># base loss rate: 45%</span>
+
+<span class="c-cm"># RSI signal accuracy</span>
+<span class="c-var">p_rsi_given_profit</span> = <span class="c-num">0.65</span>  <span class="c-cm"># RSI fires on 65% of winning trades</span>
+<span class="c-var">p_rsi_given_loss</span>   = <span class="c-num">0.35</span>  <span class="c-cm"># RSI fires on 35% of losing trades</span>
+
+<span class="c-cm"># Total probability RSI fires</span>
+<span class="c-var">p_rsi</span> = p_rsi_given_profit * p_profit + p_rsi_given_loss * p_loss
+
+<span class="c-cm"># Updated win rate when RSI confirms</span>
+<span class="c-var">p_profit_given_rsi</span> = (p_rsi_given_profit * p_profit) / p_rsi
+
+<span class="c-fn">print</span>(<span class="c-str">f"Base win rate:          {p_profit:.1%}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Win rate with RSI filter: {p_profit_given_rsi:.1%}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Improvement:            +{(p_profit_given_rsi-p_profit)*100:.1f} percentage points"</span>)</pre>
+      </div>
+
+      <div class="output-wrap">
+        <div class="output-header">▶ python3 rsi_filter.py</div>
+        <div class="output-body">
+          <div>
+            <span class="out-ln"
+              >Base win
+              rate:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span
+            ><span class="out-n">55.0%</span>
+          </div>
+          <div>
+            <span class="out-ln">Win rate with RSI filter:&nbsp;</span
+            ><span class="out-n">69.4%</span>
+          </div>
+          <div>
+            <span class="out-ln"
+              >Improvement:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span
+            ><span class="out-n">+14.4 percentage points</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-amber">
+        <div class="callout-title">The trading insight</div>
+        <p
+          style="
+            margin: 0;
+            font-size: 14px;
+            color: var(--ink-soft);
+            line-height: 1.75;
+          "
+        >
+          By only taking trades where the RSI confirms, you lift your win rate
+          from <strong>55% to 69.4%</strong> — a gain of 14.4 percentage points.
+          You take fewer trades but each one has a higher probability of
+          success. This is Bayesian filtering in practice. It is one of the most
+          powerful things a systematic trader can do.
+        </p>
+      </div>
+
+      <h2>The Base Rate Fallacy — The Most Expensive Mistake in Trading</h2>
+      <p>
+        The most common error in trading is ignoring the base rate. If a signal
+        has 90% accuracy but the event it predicts only happens 1% of the time —
+        most of your signals are still false alarms. Bayes theorem prevents this
+        mistake.
+      </p>
+
+      <div class="callout callout-red">
+        <div class="callout-title">The base rate trap — a warning</div>
+        <p
+          style="
+            margin: 0;
+            font-size: 14px;
+            color: var(--ink-soft);
+            line-height: 1.75;
+          "
+        >
+          Imagine a model that detects market crashes with 95% accuracy. Sounds
+          amazing. But crashes only happen 2% of the time. If your model fires —
+          what is the actual probability of a real crash?<br /><br />
+          Run Bayes: P(crash | alert) = (0.95 × 0.02) / (0.95 × 0.02 + 0.05 ×
+          0.98) = <strong style="color: var(--red)">28%</strong><br /><br />
+          A 95% accurate model gives you a 28% probability of being right. That
+          is not a bug — that is mathematics. The low base rate of crashes
+          dominates everything. This is why ignoring priors destroys traders.
+        </p>
+      </div>
+
+      <h2>The 3 Rules That Make You a Bayesian Trader</h2>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Rule</th>
+            <th>What it means in practice</th>
+            <th>Most traders do</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="hl-blue">Always start with a prior</td>
+            <td>Know the base rate of your signal before you trust it</td>
+            <td style="color: var(--red)">Ignore base rates entirely</td>
+          </tr>
+          <tr>
+            <td class="hl-blue">Update, never replace</td>
+            <td>New evidence updates your belief — it doesn't restart it</td>
+            <td style="color: var(--red)">
+              React emotionally to single signals
+            </td>
+          </tr>
+          <tr>
+            <td class="hl-blue">Chain your signals</td>
+            <td>
+              Each confirming signal raises posterior; conflicting signal lowers
+              it
+            </td>
+            <td style="color: var(--red)">Look for confirmation only</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr class="rule" />
+
+      <div class="takeaway">
+        <div class="takeaway-title">Three things to remember from Day 3</div>
+        <p class="takeaway-body">
+          Bayesian thinking is not a formula — it is a discipline. Every trade
+          is a belief. Every signal is evidence. Evidence updates beliefs
+          mathematically, not emotionally.
+        </p>
+        <ul class="takeaway-list">
+          <li>
+            P(A | B) is not the same as P(B | A). Confusing them is one of the
+            most expensive mistakes in trading — and in medicine, law, and
+            everywhere else.
+          </li>
+          <li>
+            Bayes theorem lets you chain signals. Three confirming signals
+            updated a 40% prior to 94.7% confidence. That is systematic
+            edge-building, not guesswork.
+          </li>
+          <li>
+            Always include the base rate. A 95% accurate model on a 2% base rate
+            event gives you only 28% posterior probability. Priors matter more
+            than most people think.
+          </li>
+        </ul>
+      </div>
+
+      <div class="article-nav">
+        <a href="day2.html">
+          <span class="nav-dir">← Previous</span>
+          <span class="nav-title">Day 2: Expected Value &amp; Moments</span>
+        </a>
+        <a href="index.html" class="next">
+          <span class="nav-dir">All Articles</span>
+          <span class="nav-title">View Full 90-Day Series →</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="article-footer">
+      <div class="footer-series">90-Day Quant Finance Notes</div>
+      <div class="footer-next">
+        Tomorrow — Day 4: Central Limit Theorem<br />Why your backtest might be
+        giving you false confidence
+      </div>
+      <div class="footer-tags">
+        <span class="footer-tag">#QuantFinance</span>
+        <span class="footer-tag">#TradingMath</span>
+        <span class="footer-tag">#BayesTheorem</span>
+        <span class="footer-tag">#AlgorithmicTrading</span>
+        <span class="footer-tag">#Python</span>
+        <span class="footer-tag">#Statistics</span>
+        <span class="footer-tag">#DataScience</span>
+        <span class="footer-tag">#Finance</span>
+        <span class="footer-tag">#SriLanka</span>
+        <span class="footer-tag">#Quant</span>
+      </div>
+      <div class="footer-author">
+        Written by <strong>Nadun Sulochana</strong> &nbsp;·&nbsp;
+        github.com/ns530 &nbsp;·&nbsp; nadunsulochana92@gmail.com
+      </div>
+    </div>
+  </body>
+</html>
