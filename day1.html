@@ -1,292 +1,100 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Day 1: The Distribution Trap — Quant Finance Notes</title>
-    <link rel="stylesheet" href="style.css" />
-    <style>
-      .dist-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 16px;
-        margin: 32px 0;
-      }
-      @media (max-width: 600px) {
-        .dist-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-      .dist-card {
-        border-radius: 8px;
-        padding: 24px 20px;
-        border: 1px solid var(--rule);
-      }
-      .dist-card.normal {
-        background: var(--accent-lt);
-        border-color: #b8cce4;
-      }
-      .dist-card.student {
-        background: var(--red-lt);
-        border-color: #e4b8b8;
-      }
-      .dist-card.lognorm {
-        background: var(--green-lt);
-        border-color: #b8e4c4;
-      }
-      .dist-label {
-        font-size: 10px;
-        font-weight: 600;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        margin-bottom: 8px;
-      }
-      .normal .dist-label {
-        color: var(--accent-mid);
-      }
-      .student .dist-label {
-        color: var(--red);
-      }
-      .lognorm .dist-label {
-        color: var(--green);
-      }
-      .dist-name {
-        font-family: "Playfair Display", serif;
-        font-size: 18px;
-        font-weight: 700;
-        margin-bottom: 10px;
-        color: var(--ink);
-      }
-      .dist-card p {
-        font-size: 13.5px;
-        line-height: 1.6;
-        margin: 0;
-        color: var(--ink-soft);
-      }
-      .dist-stat {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 14px;
-        padding-top: 12px;
-        border-top: 1px solid rgba(0, 0, 0, 0.08);
-        font-size: 12px;
-        color: var(--ink-muted);
-      }
-      .kurt-visual {
-        background: white;
-        border: 1px solid var(--rule);
-        border-radius: 10px;
-        padding: 28px;
-        margin: 28px 0;
-      }
-      .kurt-label {
-        font-size: 11px;
-        font-weight: 600;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--ink-muted);
-        margin-bottom: 20px;
-      }
-      .kurt-bar-group {
-        margin-bottom: 14px;
-      }
-      .kurt-bar-label {
-        display: flex;
-        justify-content: space-between;
-        font-size: 13px;
-        margin-bottom: 6px;
-      }
-      .kurt-track {
-        height: 12px;
-        background: var(--cream-dark);
-        border-radius: 6px;
-        overflow: hidden;
-      }
-      .kurt-fill {
-        height: 12px;
-        border-radius: 6px;
-      }
-      .prob-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 9px 0;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.07);
-        font-size: 14px;
-      }
-      .prob-row:last-child {
-        border-bottom: none;
-      }
-      .prob-label {
-        color: var(--ink-soft);
-      }
-      .prob-val-n {
-        color: var(--accent-mid);
-        font-weight: 600;
-        font-family: "Source Code Pro", monospace;
-        font-size: 13px;
-      }
-      .prob-val-f {
-        color: var(--red);
-        font-weight: 600;
-        font-family: "Source Code Pro", monospace;
-        font-size: 13px;
-      }
-      .data-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 28px 0;
-        font-size: 14px;
-      }
-      .data-table th {
-        text-align: left;
-        padding: 10px 16px;
-        font-size: 11px;
-        font-weight: 600;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--ink-muted);
-        border-bottom: 2px solid var(--rule);
-      }
-      .data-table td {
-        padding: 13px 16px;
-        border-bottom: 1px solid var(--cream-dark);
-        color: var(--ink-soft);
-      }
-      .data-table tr:last-child td {
-        border-bottom: none;
-      }
-      .hl-blue {
-        color: var(--accent);
-        font-weight: 600;
-      }
-      .hl-red {
-        color: var(--red);
-        font-weight: 600;
-      }
-      .gap-row td {
-        background: var(--amber-lt);
-        color: var(--amber);
-        font-weight: 600;
-      }
-    </style>
-  </head>
-  <body>
-    <nav class="site-nav">
-      <a class="nav-brand" href="index.html"
-        >Quant Finance <span>Notes</span></a
-      >
-      <div class="nav-links">
-        <a href="index.html">All Articles</a>
-        <a
-          href="https://www.linkedin.com/in/nadun-sulochana-41923029b"
-          target="_blank"
-          >LinkedIn</a
-        >
-        <span class="nav-badge">Day 1 / 90</span>
-      </div>
-    </nav>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 1: The Distribution Trap — Quant Finance Notes</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.dist-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:32px 0;}
+@media(max-width:600px){.dist-grid{grid-template-columns:1fr;}}
+.dist-card{border-radius:8px;padding:24px 20px;border:1px solid var(--rule);}
+.dist-card.normal{background:var(--accent-lt);border-color:#B8CCE4;}
+.dist-card.student{background:var(--red-lt);border-color:#E4B8B8;}
+.dist-card.lognorm{background:var(--green-lt);border-color:#B8E4C4;}
+.dist-label{font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;}
+.normal .dist-label{color:var(--accent-mid);}
+.student .dist-label{color:var(--red);}
+.lognorm .dist-label{color:var(--green);}
+.dist-name{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;margin-bottom:10px;color:var(--ink);}
+.dist-card p{font-size:13.5px;line-height:1.6;margin:0;color:var(--ink-soft);}
+.dist-stat{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.08);font-size:12px;color:var(--ink-muted);}
+.kurt-visual{background:white;border:1px solid var(--rule);border-radius:10px;padding:28px;margin:28px 0;}
+.kurt-label{font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:20px;}
+.kurt-bar-group{margin-bottom:14px;}
+.kurt-bar-label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;}
+.kurt-track{height:12px;background:var(--cream-dark);border-radius:6px;overflow:hidden;}
+.kurt-fill{height:12px;border-radius:6px;}
+.prob-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(0,0,0,0.07);font-size:14px;}
+.prob-row:last-child{border-bottom:none;}
+.prob-label{color:var(--ink-soft);}
+.prob-val-n{color:var(--accent-mid);font-weight:600;font-family:'Source Code Pro',monospace;font-size:13px;}
+.prob-val-f{color:var(--red);font-weight:600;font-family:'Source Code Pro',monospace;font-size:13px;}
+.data-table{width:100%;border-collapse:collapse;margin:28px 0;font-size:14px;}
+.data-table th{text-align:left;padding:10px 16px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);border-bottom:2px solid var(--rule);}
+.data-table td{padding:13px 16px;border-bottom:1px solid var(--cream-dark);color:var(--ink-soft);}
+.data-table tr:last-child td{border-bottom:none;}
+.hl-blue{color:var(--accent);font-weight:600;}
+.hl-red{color:var(--red);font-weight:600;}
+.gap-row td{background:var(--amber-lt);color:var(--amber);font-weight:600;}
+</style>
+</head>
+<body>
+<nav class="site-nav">
+  <a class="nav-brand" href="index.html">Quant Finance <span>Notes</span></a>
+  <div class="nav-links">
+    <a href="index.html">All Articles</a>
+    <a href="https://www.linkedin.com/in/nadun-sulochana-41923029b" target="_blank">LinkedIn</a>
+    <span class="nav-badge">Day 1 / 90</span>
+  </div>
+</nav>
 
-    <div class="hero">
-      <div class="series-tag">
-        Quant Finance Notes &nbsp;·&nbsp; Day 1 of 90
-      </div>
-      <h1>The Distribution <em>Trap</em> That Kills Most Traders</h1>
-      <p class="hero-sub">
-        Your risk model is probably built on a dangerous assumption. Here is the
-        math that proves it — and Python output to show exactly how much it
-        matters.
-      </p>
-      <div class="hero-meta">
-        <div class="avatar">NS</div>
-        <div class="meta-text">
-          <strong>Nadun Sulochana</strong>Aspiring Software Architect · BSc
-          Cyber Security · SLTC Research University
-        </div>
-        <div class="day-badge">01 / 90</div>
-      </div>
+<div class="hero">
+  <div class="series-tag">Quant Finance Notes &nbsp;·&nbsp; Day 1 of 90</div>
+  <h1>The Distribution <em>Trap</em> That Kills Most Traders</h1>
+  <p class="hero-sub">Your risk model is probably built on a dangerous assumption. Here is the math that proves it — and Python output to show exactly how much it matters.</p>
+  <div class="hero-meta">
+    <div class="avatar">NS</div>
+    <div class="meta-text"><strong>Nadun Sulochana</strong>Aspiring Software Architect · BSc Cyber Security · SLTC Research University</div>
+    <div class="day-badge">01 / 90</div>
+  </div>
+</div>
+
+<div class="article-body">
+  <p class="lead">Most finance models assume your returns follow a Normal distribution. That friendly, symmetric bell curve. Real markets crash far more often than it predicts. Here is the math — and the Python output — that proves it.</p>
+
+  <h2>Why This Matters Before Anything Else</h2>
+  <p>Before you build a trading strategy, backtest a signal, or size a position — you need to understand what distribution you are assuming your returns follow. Because that assumption is the foundation of every risk calculation you will ever make.</p>
+  <p>If the foundation is wrong, every number built on it is wrong too. And most people are using the wrong foundation.</p>
+  <div class="pull-quote">The Normal distribution is not wrong because it is inaccurate. It is wrong because it makes crashes feel impossible — right until the moment they happen.</div>
+
+  <h2>The 3 Distributions Every Trader Must Know</h2>
+  <div class="dist-grid">
+    <div class="dist-card normal">
+      <div class="dist-label">Distribution 1</div>
+      <div class="dist-name">Normal</div>
+      <p>The one every textbook teaches. Symmetric bell curve. Easy to work with. Assumes extreme moves are nearly impossible.</p>
+      <div class="dist-stat"><span>Kurtosis</span><strong style="color:var(--accent-mid)">3.0</strong></div>
     </div>
+    <div class="dist-card student">
+      <div class="dist-label">Distribution 2</div>
+      <div class="dist-name">Student-t</div>
+      <p>Same bell shape — but with fat tails. Extreme moves happen far more often. Fits real market returns much better.</p>
+      <div class="dist-stat"><span>Kurtosis (df=4)</span><strong style="color:var(--red)">∞</strong></div>
+    </div>
+    <div class="dist-card lognorm">
+      <div class="dist-label">Distribution 3</div>
+      <div class="dist-name">Lognormal</div>
+      <p>Stock prices can never go below zero. If log(S) is Normal, S is Lognormal. The foundation Black-Scholes is built on.</p>
+      <div class="dist-stat"><span>Price floor</span><strong style="color:var(--green)">S > 0</strong></div>
+    </div>
+  </div>
 
-    <div class="article-body">
-      <p class="lead">
-        Most finance models assume your returns follow a Normal distribution.
-        That friendly, symmetric bell curve. Real markets crash far more often
-        than it predicts. Here is the math — and the Python output — that proves
-        it.
-      </p>
-
-      <h2>Why This Matters Before Anything Else</h2>
-      <p>
-        Before you build a trading strategy, backtest a signal, or size a
-        position — you need to understand what distribution you are assuming
-        your returns follow. Because that assumption is the foundation of every
-        risk calculation you will ever make.
-      </p>
-      <p>
-        If the foundation is wrong, every number built on it is wrong too. And
-        most people are using the wrong foundation.
-      </p>
-      <div class="pull-quote">
-        The Normal distribution is not wrong because it is inaccurate. It is
-        wrong because it makes crashes feel impossible — right until the moment
-        they happen.
-      </div>
-
-      <h2>The 3 Distributions Every Trader Must Know</h2>
-      <div class="dist-grid">
-        <div class="dist-card normal">
-          <div class="dist-label">Distribution 1</div>
-          <div class="dist-name">Normal</div>
-          <p>
-            The one every textbook teaches. Symmetric bell curve. Easy to work
-            with. Assumes extreme moves are nearly impossible.
-          </p>
-          <div class="dist-stat">
-            <span>Kurtosis</span
-            ><strong style="color: var(--accent-mid)">3.0</strong>
-          </div>
-        </div>
-        <div class="dist-card student">
-          <div class="dist-label">Distribution 2</div>
-          <div class="dist-name">Student-t</div>
-          <p>
-            Same bell shape — but with fat tails. Extreme moves happen far more
-            often. Fits real market returns much better.
-          </p>
-          <div class="dist-stat">
-            <span>Kurtosis (df=4)</span
-            ><strong style="color: var(--red)">∞</strong>
-          </div>
-        </div>
-        <div class="dist-card lognorm">
-          <div class="dist-label">Distribution 3</div>
-          <div class="dist-name">Lognormal</div>
-          <p>
-            Stock prices can never go below zero. If log(S) is Normal, S is
-            Lognormal. The foundation Black-Scholes is built on.
-          </p>
-          <div class="dist-stat">
-            <span>Price floor</span
-            ><strong style="color: var(--green)">S > 0</strong>
-          </div>
-        </div>
-      </div>
-
-      <h2>The Python Code — Run It Yourself</h2>
-      <p>
-        This code asks one question two ways: what is the worst loss you should
-        expect on 1 in every 100 trading days? First using Normal. Then using
-        the fat-tailed Student-t with df=4, which fits real stock returns well.
-      </p>
-      <div class="code-wrap">
-        <div class="code-header">
-          <div class="dot dot-r"></div>
-          <div class="dot dot-y"></div>
-          <div class="dot dot-g"></div>
-          <div class="code-lang">python</div>
-        </div>
-        <pre><span class="c-kw">import</span> numpy <span class="c-kw">as</span> np
+  <h2>The Python Code — Run It Yourself</h2>
+  <p>This code asks one question two ways: what is the worst loss you should expect on 1 in every 100 trading days? First using Normal. Then using the fat-tailed Student-t with df=4, which fits real stock returns well.</p>
+  <div class="code-wrap">
+    <div class="code-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="code-lang">python</div></div>
+    <pre><span class="c-kw">import</span> numpy <span class="c-kw">as</span> np
 <span class="c-kw">from</span> scipy <span class="c-kw">import</span> stats
 
 <span class="c-cm"># Parameters — 0% mean, 1.5% daily volatility</span>
@@ -300,227 +108,95 @@
 
 <span class="c-fn">print</span>(<span class="c-str">f"Normal VaR 99%:    {var_normal:.2f}%"</span>)
 <span class="c-fn">print</span>(<span class="c-str">f"Fat-tail VaR 99%:  {var_t:.2f}%"</span>)</pre>
-      </div>
+  </div>
 
-      <h3>Actual Output</h3>
-      <div class="output-wrap">
-        <div class="output-header">▶ python3 var_comparison.py</div>
-        <div class="output-body">
-          <div>
-            <span class="out-ln">Normal VaR 99%:&nbsp;&nbsp;&nbsp;&nbsp;</span
-            ><span class="out-n">-3.49%</span>
-          </div>
-          <div>
-            <span class="out-lf">Fat-tail VaR 99%:&nbsp;&nbsp;</span
-            ><span class="out-f">-5.62%</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="callout callout-red">
-        <div class="callout-title">What the output means</div>
-        <div class="result-grid">
-          <div class="result-item">
-            <div class="result-number" style="color: var(--accent)">-3.49%</div>
-            <div class="result-desc">
-              Normal model: worst 1-in-100 day<br /><em
-                >What textbooks assume</em
-              >
-            </div>
-          </div>
-          <div class="result-item">
-            <div class="result-number" style="color: var(--red)">-5.62%</div>
-            <div class="result-desc">
-              Fat-tail model: worst 1-in-100 day<br /><em
-                >What actually happens</em
-              >
-            </div>
-          </div>
-        </div>
-        <div class="gap-highlight" style="color: var(--red)">
-          The fat-tail model shows 61% more risk. That gap is the difference
-          between a bad day and a blown account.
-        </div>
-      </div>
-
-      <h2>What This Means in Real Money (LKR)</h2>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Model</th>
-            <th>VaR 99%</th>
-            <th>Worst day loss (LKR 1M account)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="hl-blue">Normal distribution</td>
-            <td class="hl-blue">−3.49%</td>
-            <td class="hl-blue">LKR 34,895</td>
-          </tr>
-          <tr>
-            <td class="hl-red">Student-t (df=4, fat tails)</td>
-            <td class="hl-red">−5.62%</td>
-            <td class="hl-red">LKR 56,204</td>
-          </tr>
-          <tr class="gap-row">
-            <td>Underestimated risk</td>
-            <td>−2.13%</td>
-            <td>LKR 21,309 unaccounted for</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <h2>The Kurtosis Problem</h2>
-      <div class="kurt-visual">
-        <div class="kurt-label">
-          Excess kurtosis — higher = fatter tails = more crashes
-        </div>
-        <div class="kurt-bar-group">
-          <div class="kurt-bar-label">
-            <span>Normal distribution</span
-            ><span style="color: var(--accent-mid)">0 (baseline)</span>
-          </div>
-          <div class="kurt-track">
-            <div
-              class="kurt-fill"
-              style="width: 4%; background: var(--accent-mid)"
-            ></div>
-          </div>
-        </div>
-        <div class="kurt-bar-group">
-          <div class="kurt-bar-label">
-            <span>Student-t (df=10)</span
-            ><span style="color: var(--amber)">1.0</span>
-          </div>
-          <div class="kurt-track">
-            <div
-              class="kurt-fill"
-              style="width: 28%; background: var(--amber)"
-            ></div>
-          </div>
-        </div>
-        <div class="kurt-bar-group">
-          <div class="kurt-bar-label">
-            <span>Real S&amp;P 500 daily returns</span
-            ><span style="color: #c04020">≈ 8–12</span>
-          </div>
-          <div class="kurt-track">
-            <div
-              class="kurt-fill"
-              style="width: 78%; background: #c04020"
-            ></div>
-          </div>
-        </div>
-        <div class="kurt-bar-group">
-          <div class="kurt-bar-label">
-            <span>Student-t (df=4) — fits real returns</span
-            ><span style="color: var(--red)">∞</span>
-          </div>
-          <div class="kurt-track">
-            <div
-              class="kurt-fill"
-              style="width: 96%; background: var(--red)"
-            ></div>
-          </div>
-        </div>
-      </div>
-
-      <h2>The Probability That Changes Everything</h2>
-      <div class="callout callout-amber">
-        <div class="callout-title">
-          Probability of a move larger than 3 standard deviations
-        </div>
-        <div class="prob-row">
-          <span class="prob-label">Normal distribution says</span
-          ><span class="prob-val-n">0.27%</span>
-        </div>
-        <div class="prob-row">
-          <span class="prob-label">Student-t (df=4) says</span
-          ><span class="prob-val-f">3.99%</span>
-        </div>
-        <div class="prob-row">
-          <span class="prob-label">How much more frequent in reality</span
-          ><span class="prob-val-f">14.8× more often</span>
-        </div>
-      </div>
-      <p>
-        A 3-sigma move happens once every 370 days if you trust Normal. With fat
-        tails it happens once every 25 days. That is not a theoretical
-        distinction. That is a completely different risk regime.
-      </p>
-
-      <hr class="rule" />
-      <h2>What Should You Actually Use?</h2>
-      <h3>Quick mental math</h3>
-      <p>Normal is fine. Easy, fast, good enough for rough estimates.</p>
-      <h3>Serious risk calculations</h3>
-      <p>
-        Use Student-t with df between 3 and 6. Your VaR, position sizing, and
-        stress tests will give honest numbers.
-      </p>
-      <h3>Modeling stock price levels</h3>
-      <p>
-        Use Lognormal. Prices cannot go below zero. This is why Black-Scholes
-        uses it as its foundation.
-      </p>
-
-      <div class="takeaway">
-        <div class="takeaway-title">Three things to remember from Day 1</div>
-        <p class="takeaway-body">
-          The model you choose determines the risk you think you have. Choose
-          the wrong model and your risk estimates are wrong before you place a
-          single trade.
-        </p>
-        <ul class="takeaway-list">
-          <li>
-            Normal distribution underestimates crash probability by roughly 15×
-            compared to what markets actually deliver
-          </li>
-          <li>
-            Student-t with df=4 gives VaR estimates 61% worse than Normal — and
-            that is the honest number
-          </li>
-          <li>
-            Always check the kurtosis of your return series before choosing a
-            distribution. The data tells you what to use.
-          </li>
-        </ul>
-      </div>
-
-      <div class="article-nav">
-        <a href="index.html"
-          ><span class="nav-dir">← Home</span
-          ><span class="nav-title">All 90 Articles</span></a
-        >
-        <a href="day2.html" class="next"
-          ><span class="nav-dir">Next →</span
-          ><span class="nav-title">Day 2: Expected Value &amp; Moments</span></a
-        >
-      </div>
+  <h3>Actual Output</h3>
+  <div class="output-wrap">
+    <div class="output-header">▶ python3 var_comparison.py</div>
+    <div class="output-body">
+      <div><span class="out-ln">Normal VaR 99%:&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="out-n">-3.49%</span></div>
+      <div><span class="out-lf">Fat-tail VaR 99%:&nbsp;&nbsp;</span><span class="out-f">-5.62%</span></div>
     </div>
+  </div>
 
-    <div class="article-footer">
-      <div class="footer-series">90-Day Quant Finance Notes</div>
-      <div class="footer-next">
-        Tomorrow — Day 2: Expected Value &amp; Moments<br />Why "average return"
-        is the most misleading number in finance
-      </div>
-      <div class="footer-tags">
-        <span class="footer-tag">#QuantFinance</span
-        ><span class="footer-tag">#TradingMath</span
-        ><span class="footer-tag">#AlgorithmicTrading</span
-        ><span class="footer-tag">#Python</span
-        ><span class="footer-tag">#Statistics</span
-        ><span class="footer-tag">#DataScience</span
-        ><span class="footer-tag">#Finance</span
-        ><span class="footer-tag">#SriLanka</span
-        ><span class="footer-tag">#Quant</span>
-      </div>
-      <div class="footer-author">
-        Written by <strong>Nadun Sulochana</strong> &nbsp;·&nbsp;
-        github.com/ns530 &nbsp;·&nbsp; nadunsulochana92@gmail.com
-      </div>
+  <div class="callout callout-red">
+    <div class="callout-title">What the output means</div>
+    <div class="result-grid">
+      <div class="result-item"><div class="result-number" style="color:var(--accent)">-3.49%</div><div class="result-desc">Normal model: worst 1-in-100 day<br/><em>What textbooks assume</em></div></div>
+      <div class="result-item"><div class="result-number" style="color:var(--red)">-5.62%</div><div class="result-desc">Fat-tail model: worst 1-in-100 day<br/><em>What actually happens</em></div></div>
     </div>
-  </body>
+    <div class="gap-highlight" style="color:var(--red);">The fat-tail model shows 61% more risk. That gap is the difference between a bad day and a blown account.</div>
+  </div>
+
+  <h2>What This Means in Real Money (LKR)</h2>
+  <table class="data-table">
+    <thead><tr><th>Model</th><th>VaR 99%</th><th>Worst day loss (LKR 1M account)</th></tr></thead>
+    <tbody>
+      <tr><td class="hl-blue">Normal distribution</td><td class="hl-blue">−3.49%</td><td class="hl-blue">LKR 34,895</td></tr>
+      <tr><td class="hl-red">Student-t (df=4, fat tails)</td><td class="hl-red">−5.62%</td><td class="hl-red">LKR 56,204</td></tr>
+      <tr class="gap-row"><td>Underestimated risk</td><td>−2.13%</td><td>LKR 21,309 unaccounted for</td></tr>
+    </tbody>
+  </table>
+
+  <h2>The Kurtosis Problem</h2>
+  <div class="kurt-visual">
+    <div class="kurt-label">Excess kurtosis — higher = fatter tails = more crashes</div>
+    <div class="kurt-bar-group">
+      <div class="kurt-bar-label"><span>Normal distribution</span><span style="color:var(--accent-mid)">0 (baseline)</span></div>
+      <div class="kurt-track"><div class="kurt-fill" style="width:4%;background:var(--accent-mid);"></div></div>
+    </div>
+    <div class="kurt-bar-group">
+      <div class="kurt-bar-label"><span>Student-t (df=10)</span><span style="color:var(--amber)">1.0</span></div>
+      <div class="kurt-track"><div class="kurt-fill" style="width:28%;background:var(--amber);"></div></div>
+    </div>
+    <div class="kurt-bar-group">
+      <div class="kurt-bar-label"><span>Real S&amp;P 500 daily returns</span><span style="color:#C04020">≈ 8–12</span></div>
+      <div class="kurt-track"><div class="kurt-fill" style="width:78%;background:#C04020;"></div></div>
+    </div>
+    <div class="kurt-bar-group">
+      <div class="kurt-bar-label"><span>Student-t (df=4) — fits real returns</span><span style="color:var(--red)">∞</span></div>
+      <div class="kurt-track"><div class="kurt-fill" style="width:96%;background:var(--red);"></div></div>
+    </div>
+  </div>
+
+  <h2>The Probability That Changes Everything</h2>
+  <div class="callout callout-amber">
+    <div class="callout-title">Probability of a move larger than 3 standard deviations</div>
+    <div class="prob-row"><span class="prob-label">Normal distribution says</span><span class="prob-val-n">0.27%</span></div>
+    <div class="prob-row"><span class="prob-label">Student-t (df=4) says</span><span class="prob-val-f">3.99%</span></div>
+    <div class="prob-row"><span class="prob-label">How much more frequent in reality</span><span class="prob-val-f">14.8× more often</span></div>
+  </div>
+  <p>A 3-sigma move happens once every 370 days if you trust Normal. With fat tails it happens once every 25 days. That is not a theoretical distinction. That is a completely different risk regime.</p>
+
+  <hr class="rule"/>
+  <h2>What Should You Actually Use?</h2>
+  <h3>Quick mental math</h3><p>Normal is fine. Easy, fast, good enough for rough estimates.</p>
+  <h3>Serious risk calculations</h3><p>Use Student-t with df between 3 and 6. Your VaR, position sizing, and stress tests will give honest numbers.</p>
+  <h3>Modeling stock price levels</h3><p>Use Lognormal. Prices cannot go below zero. This is why Black-Scholes uses it as its foundation.</p>
+
+  <div class="takeaway">
+    <div class="takeaway-title">Three things to remember from Day 1</div>
+    <p class="takeaway-body">The model you choose determines the risk you think you have. Choose the wrong model and your risk estimates are wrong before you place a single trade.</p>
+    <ul class="takeaway-list">
+      <li>Normal distribution underestimates crash probability by roughly 15× compared to what markets actually deliver</li>
+      <li>Student-t with df=4 gives VaR estimates 61% worse than Normal — and that is the honest number</li>
+      <li>Always check the kurtosis of your return series before choosing a distribution. The data tells you what to use.</li>
+    </ul>
+  </div>
+
+  <div class="article-nav">
+    <a href="index.html"><span class="nav-dir">← Home</span><span class="nav-title">All 90 Articles</span></a>
+    <a href="day2.html" class="next"><span class="nav-dir">Next →</span><span class="nav-title">Day 2: Expected Value &amp; Moments</span></a>
+  </div>
+</div>
+
+<div class="article-footer">
+  <div class="footer-series">90-Day Quant Finance Notes</div>
+  <div class="footer-next">Tomorrow — Day 2: Expected Value &amp; Moments<br/>Why "average return" is the most misleading number in finance</div>
+  <div class="footer-tags">
+    <span class="footer-tag">#QuantFinance</span><span class="footer-tag">#TradingMath</span><span class="footer-tag">#AlgorithmicTrading</span><span class="footer-tag">#Python</span><span class="footer-tag">#Statistics</span><span class="footer-tag">#DataScience</span><span class="footer-tag">#Finance</span><span class="footer-tag">#SriLanka</span><span class="footer-tag">#Quant</span>
+  </div>
+  <div class="footer-author">Written by <strong>Nadun Sulochana</strong> &nbsp;·&nbsp; github.com/ns530 &nbsp;·&nbsp; nadunsulochana92@gmail.com</div>
+</div>
+</body>
 </html>
