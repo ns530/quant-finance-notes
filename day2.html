@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="google-site-verification"
+      content="SgzPqB0Vckpfji6y3nNSuKVuLHeB-5xwqyW2BR0Zr9g"
+    />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="The 4 statistical moments every trader needs: mean, variance, skewness, kurtosis. Why arithmetic mean lies and geometric mean is what you actually bank. Sharpe ratio blind spots explained with Python output."
+    />
+    <meta
+      name="keywords"
+      content="expected value trading, statistical moments finance, skewness kurtosis trading, geometric mean vs arithmetic mean, Sharpe ratio limitations, Python statistics finance, quant finance tutorial"
+    />
+    <meta name="author" content="Nadun Sulochana" />
+    <meta
+      name="robots"
+      content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1"
+    />
+    <meta name="googlebot" content="index, follow" />
+    <link
+      rel="canonical"
+      href="https://ns530.github.io/quant-finance-notes/day2.html"
+    />
+
+    <!-- Open Graph / Facebook / LinkedIn -->
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:url"
+      content="https://ns530.github.io/quant-finance-notes/day2.html"
+    />
+    <meta
+      property="og:title"
+      content="Day 2: Expected Value & Moments — Why Average Return Lies | Quant Finance Notes"
+    />
+    <meta
+      property="og:description"
+      content="The 4 statistical moments every trader needs: mean, variance, skewness, kurtosis. Why arithmetic mean lies and geometric mean is what you actually bank. Sharpe ratio blind spots explained with Python output."
+    />
+    <meta property="og:site_name" content="Quant Finance Notes" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="Day 2: Expected Value & Moments — Why Average Return Lies | Quant Finance Notes"
+    />
+    <meta
+      name="twitter:description"
+      content="The 4 statistical moments every trader needs: mean, variance, skewness, kurtosis. Why arithmetic mean lies and geometric mean is what you actually bank. Sharpe ratio blind spots explained with Python output."
+    />
+    <meta name="twitter:creator" content="@ns530" />
+
+    <!-- GEO / AI Citations -->
+    <meta name="citation_author" content="Nadun Sulochana" />
+    <meta
+      name="citation_title"
+      content="Day 2: Expected Value & Moments — Why Average Return Lies | Quant Finance Notes"
+    />
+    <meta
+      name="citation_public_url"
+      content="https://ns530.github.io/quant-finance-notes/day2.html"
+    />
+    <meta name="geo.region" content="LK" />
+    <meta name="geo.placename" content="Sri Lanka" />
+
+    <!-- Sitemap reference -->
+    <link
+      rel="sitemap"
+      type="application/xml"
+      href="/quant-finance-notes/sitemap.xml"
+    />
+
+    <!-- JSON-LD Structured Data (SEO + GEO) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "name": "Day 2: Expected Value & Moments — Why Average Return Lies | Quant Finance Notes",
+        "description": "The 4 statistical moments every trader needs: mean, variance, skewness, kurtosis. Why arithmetic mean lies and geometric mean is what you actually bank. Sharpe ratio blind spots explained with Python output.",
+        "url": "https://ns530.github.io/quant-finance-notes/day2.html",
+        "author": {
+          "@type": "Person",
+          "name": "Nadun Sulochana",
+          "url": "https://www.linkedin.com/in/nadun-sulochana-41923029b",
+          "sameAs": [
+            "https://github.com/ns530",
+            "https://www.linkedin.com/in/nadun-sulochana-41923029b",
+            "https://ns530.github.io/quant-finance-notes/"
+          ],
+          "jobTitle": "Aspiring Software Architect",
+          "alumniOf": "Sri Lanka Technological Campus",
+          "knowsAbout": [
+            "Quantitative Finance",
+            "Machine Learning",
+            "Software Architecture",
+            "Python",
+            "Cybersecurity"
+          ]
+        },
+        "publisher": {
+          "@type": "Person",
+          "name": "Nadun Sulochana"
+        },
+        "inLanguage": "en",
+        "isAccessibleForFree": true,
+        "educationalLevel": "beginner to advanced",
+        "about": [
+          "Quantitative Finance",
+          "Trading Mathematics",
+          "Python Programming",
+          "Machine Learning",
+          "Statistics"
+        ],
+        "keywords": "expected value trading, statistical moments finance, skewness kurtosis trading, geometric mean vs arithmetic mean, Sharpe ratio limitations, Python statistics finance, quant finance tutorial",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "Quant Finance Notes",
+          "url": "https://ns530.github.io/quant-finance-notes/"
+        }
+      }
+    </script>
+    <title>Day 2: Expected Value & Moments — Quant Finance Notes</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .moments-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin: 28px 0;
+      }
+      @media (max-width: 580px) {
+        .moments-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .moment-card {
+        border-radius: 10px;
+        padding: 22px;
+        border: 1px solid var(--rule);
+      }
+      .m1 {
+        background: var(--accent-lt);
+        border-color: #b8cce4;
+      }
+      .m2 {
+        background: var(--green-lt);
+        border-color: #b8e4c4;
+      }
+      .m3 {
+        background: var(--red-lt);
+        border-color: #e4b8b8;
+      }
+      .m4 {
+        background: var(--amber-lt);
+        border-color: #e4d4b8;
+      }
+      .moment-num {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+      }
+      .m1 .moment-num {
+        color: var(--accent-mid);
+      }
+      .m2 .moment-num {
+        color: var(--green);
+      }
+      .m3 .moment-num {
+        color: var(--red);
+      }
+      .m4 .moment-num {
+        color: var(--amber);
+      }
+      .moment-name {
+        font-family: "Playfair Display", serif;
+        font-size: 19px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: var(--ink);
+      }
+      .moment-card p {
+        font-size: 13px;
+        line-height: 1.6;
+        margin: 0 0 10px;
+        color: var(--ink-soft);
+      }
+      .moment-formula {
+        font-family: "Source Code Pro", monospace;
+        font-size: 12px;
+        padding: 7px 10px;
+        border-radius: 5px;
+        background: rgba(0, 0, 0, 0.05);
+        margin-top: 8px;
+      }
+      .moment-insight {
+        font-size: 12px;
+        font-weight: 500;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(0, 0, 0, 0.07);
+      }
+      .m1 .moment-insight {
+        color: var(--accent-mid);
+      }
+      .m2 .moment-insight {
+        color: var(--green);
+      }
+      .m3 .moment-insight {
+        color: var(--red);
+      }
+      .m4 .moment-insight {
+        color: var(--amber);
+      }
+      .strategy-compare {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin: 24px 0;
+      }
+      @media (max-width: 500px) {
+        .strategy-compare {
+          grid-template-columns: 1fr;
+        }
+      }
+      .strat-card {
+        border-radius: 10px;
+        padding: 22px;
+        border: 1px solid var(--rule);
+        text-align: center;
+      }
+      .strat-a {
+        background: var(--red-lt);
+        border-color: #e4b8b8;
+      }
+      .strat-b {
+        background: var(--green-lt);
+        border-color: #b8e4c4;
+      }
+      .strat-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+      }
+      .strat-a .strat-label {
+        color: var(--red);
+      }
+      .strat-b .strat-label {
+        color: var(--green);
+      }
+      .strat-num {
+        font-family: "Playfair Display", serif;
+        font-size: 28px;
+        font-weight: 900;
+        line-height: 1;
+        margin-bottom: 4px;
+      }
+      .strat-a .strat-num {
+        color: var(--red);
+      }
+      .strat-b .strat-num {
+        color: var(--green);
+      }
+      .strat-desc {
+        font-size: 12px;
+        color: var(--ink-muted);
+        line-height: 1.5;
+      }
+      .strat-detail {
+        font-size: 12.5px;
+        color: var(--ink-soft);
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid rgba(0, 0, 0, 0.07);
+        line-height: 1.6;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="site-nav">
+      <a class="nav-brand" href="index.html"
+        >Quant Finance <span>Notes</span></a
+      >
+      <div class="nav-links">
+        <a href="index.html">All Articles</a>
+        <a
+          href="https://www.linkedin.com/in/nadun-sulochana-41923029b"
+          target="_blank"
+          >LinkedIn</a
+        >
+        <span class="nav-badge">Day 2 / 90</span>
+      </div>
+    </nav>
+
+    <div class="hero">
+      <div class="series-tag">
+        Quant Finance Notes &nbsp;·&nbsp; Day 2 of 90
+      </div>
+      <h1>Why <em>"Average Return"</em> Lies to You Every Single Time</h1>
+      <p class="hero-sub">
+        Every return distribution has 4 numbers that tell the complete story.
+        Most traders only look at one — and it's the most misleading one of all.
+      </p>
+      <div class="hero-meta">
+        <div class="avatar">NS</div>
+        <div class="meta-text">
+          <strong>Nadun Sulochana</strong>Aspiring Software Architect · BSc
+          Cyber Security · SLTC Research University
+        </div>
+        <div class="day-badge">02 / 90</div>
+      </div>
+    </div>
+
+    <div class="article-body">
+      <p class="lead">
+        If someone tells you a strategy made 5% average monthly return, would
+        you invest? You probably would. But that number alone tells you almost
+        nothing — and could be hiding catastrophic risk. Here is what you
+        actually need to know.
+      </p>
+
+      <h2>The 4 Moments That Describe Every Distribution</h2>
+      <p>
+        A probability distribution can be fully characterised by its moments.
+        Each moment tells you something the others cannot. Most risk models use
+        only the first two. The best ones use all four.
+      </p>
+
+      <div class="moments-grid">
+        <div class="moment-card m1">
+          <div class="moment-num">1st Moment</div>
+          <div class="moment-name">Mean (μ) — Expected Return</div>
+          <p>
+            The centre of gravity of your returns. The direction of your edge.
+            What you expect to make on average across many trades.
+          </p>
+          <div class="moment-formula">E[X] = μ = (1/n) Σ xᵢ</div>
+          <div class="moment-insight">
+            → Tells you: direction. Doesn't tell you: anything about risk.
+          </div>
+        </div>
+        <div class="moment-card m2">
+          <div class="moment-num">2nd Moment</div>
+          <div class="moment-name">Variance (σ²) — Risk</div>
+          <p>
+            How spread out your returns are around the mean. The foundation of
+            almost every risk metric — Sharpe ratio, VaR, position sizing.
+          </p>
+          <div class="moment-formula">Var(X) = E[(X − μ)²]</div>
+          <div class="moment-insight">
+            → Tells you: magnitude of swings. Sharpe ratio stops here.
+          </div>
+        </div>
+        <div class="moment-card m3">
+          <div class="moment-num">3rd Moment</div>
+          <div class="moment-name">Skewness — Direction of Lean</div>
+          <p>
+            Are your losses bigger than your wins, or vice versa? Negative skew
+            means small steady gains with occasional large crashes. Most stocks
+            have negative skew.
+          </p>
+          <div class="moment-formula">Skew = E[(X − μ)³] / σ³</div>
+          <div class="moment-insight">
+            → Negative skew = crash risk most traders ignore completely.
+          </div>
+        </div>
+        <div class="moment-card m4">
+          <div class="moment-num">4th Moment</div>
+          <div class="moment-name">Kurtosis — Tail Heaviness</div>
+          <p>
+            How often do extreme events actually happen? Normal distribution has
+            kurtosis of 3. Real S&P 500 daily returns have kurtosis of 8–12.
+          </p>
+          <div class="moment-formula">Kurt = E[(X − μ)⁴] / σ⁴</div>
+          <div class="moment-insight">
+            → High kurtosis = black swans happen far more often than models
+            predict.
+          </div>
+        </div>
+      </div>
+
+      <h2>The Python Code That Calculates All 4</h2>
+      <div class="code-wrap">
+        <div class="code-header">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+          <div class="code-lang">python</div>
+        </div>
+        <pre><span class="c-kw">import</span> pandas <span class="c-kw">as</span> pd
+<span class="c-kw">import</span> numpy <span class="c-kw">as</span> np
+<span class="c-kw">import</span> scipy.stats <span class="c-kw">as</span> stats
+
+<span class="c-cm"># Simulated daily returns — replace with your real data</span>
+np.random.<span class="c-fn">seed</span>(<span class="c-num">42</span>)
+<span class="c-var">r</span> = pd.<span class="c-fn">Series</span>(np.random.<span class="c-fn">normal</span>(<span class="c-num">0.05</span>, <span class="c-num">1.5</span>, <span class="c-num">1000</span>))
+
+<span class="c-cm"># All 4 moments in one block</span>
+<span class="c-fn">print</span>(<span class="c-str">f"Mean (μ):      {r.mean():.4f}%"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Std dev (σ):   {r.std():.4f}%"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Skewness:      {stats.skew(r):.4f}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Kurtosis:      {stats.kurtosis(r):.4f}"</span>)
+
+<span class="c-cm"># Geometric mean — the number that actually matters</span>
+<span class="c-var">geo_mean</span> = (np.<span class="c-fn">prod</span>(<span class="c-num">1</span> + r/<span class="c-num">100</span>) ** (<span class="c-num">1</span>/len(r)) - <span class="c-num">1</span>) * <span class="c-num">100</span>
+<span class="c-fn">print</span>(<span class="c-str">f"Geometric mean: {geo_mean:.4f}%"</span>)</pre>
+      </div>
+
+      <h3>Actual Output</h3>
+      <div class="output-wrap">
+        <div class="output-header">▶ python3 moments.py</div>
+        <div class="output-body">
+          <div>
+            <span class="out-ln"
+              >Mean (μ):&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span
+            ><span class="out-n">0.0790%</span>
+          </div>
+          <div>
+            <span class="out-ln">Std dev (σ):&nbsp;&nbsp;&nbsp;</span
+            ><span class="out-n">1.4681%</span>
+          </div>
+          <div>
+            <span class="out-ln"
+              >Skewness:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span
+            ><span class="out-n">0.1168</span>
+          </div>
+          <div>
+            <span class="out-ln"
+              >Kurtosis:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span
+            ><span class="out-n">0.0662</span>
+          </div>
+          <div>
+            <span class="out-ln">Geometric mean:&nbsp;</span
+            ><span class="out-n">0.0682%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-blue">
+        <div class="callout-title">Reading the output</div>
+        <p
+          style="
+            margin: 0;
+            font-size: 13.5px;
+            color: var(--ink-soft);
+            line-height: 1.7;
+          "
+        >
+          <strong>Mean 0.079%</strong> — on average, this strategy makes 0.079%
+          per day.<br />
+          <strong>Std dev 1.468%</strong> — but swings of ±1.5% are completely
+          normal.<br />
+          <strong>Skewness 0.117</strong> — very slightly right-skewed. Close to
+          symmetric. Safe.<br />
+          <strong>Kurtosis 0.066</strong> — near-zero excess kurtosis. Tails are
+          close to Normal. This is simulated data — real returns would show
+          kurtosis of 5–10.<br />
+          <strong>Geometric mean 0.068%</strong> — this is what you actually
+          compound. Always lower than arithmetic mean.
+        </p>
+      </div>
+
+      <h2>The Number That Breaks Everything: Geometric vs Arithmetic Mean</h2>
+      <p>
+        This is the most important and most misunderstood distinction in all of
+        finance. Average return lies to you. Here is proof.
+      </p>
+
+      <div class="strategy-compare">
+        <div class="strat-card strat-a">
+          <div class="strat-label">Strategy A — Looks great</div>
+          <div class="strat-num">+0.46%</div>
+          <div class="strat-desc">Arithmetic mean</div>
+          <div class="strat-detail">
+            Month 1: <strong>+10.0%</strong><br />
+            Month 2: <strong>−9.09%</strong><br />
+            Average = (10 − 9.09) / 2 = <strong>+0.46%</strong><br /><br />
+            But LKR 100 → LKR 110 → LKR 100<br />
+            <strong style="color: var(--red)">Geometric mean = 0.00%</strong
+            ><br />
+            You went absolutely nowhere.
+          </div>
+        </div>
+        <div class="strat-card strat-b">
+          <div class="strat-label">Strategy B — Actually great</div>
+          <div class="strat-num">+1.00%</div>
+          <div class="strat-desc">Both means agree</div>
+          <div class="strat-detail">
+            Every month: <strong>+1.0%</strong><br />
+            Average = +1.0%<br /><br />
+            LKR 100 × 1.01¹² = LKR 112.68<br />
+            <strong style="color: var(--green)">Geometric mean = +1.00%</strong
+            ><br />
+            Actually compounding every month.
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-red">
+        <div class="callout-title">The core insight</div>
+        <p
+          style="
+            margin: 0;
+            font-size: 14px;
+            color: var(--ink-soft);
+            line-height: 1.7;
+          "
+        >
+          Strategy A has a higher arithmetic mean (+0.46%) but zero compound
+          growth. Strategy B has the same arithmetic mean (+1.0%) AND the same
+          geometric mean.
+          <strong
+            >Arithmetic mean tells you the average of individual period returns.
+            Geometric mean tells you your actual wealth growth.</strong
+          >
+          You bank the geometric mean. Always.
+        </p>
+      </div>
+
+      <h2>Why the Sharpe Ratio Is Incomplete</h2>
+      <p>
+        The Sharpe ratio is the most widely used performance metric in finance.
+        It uses only the 1st and 2nd moments — mean and standard deviation. It
+        is completely blind to skewness and kurtosis.
+      </p>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Moment</th>
+            <th>What it measures</th>
+            <th>Sharpe uses it?</th>
+            <th>Why it matters</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="hl-blue">1st — Mean</td>
+            <td>Expected return</td>
+            <td style="color: var(--green); font-weight: 600">✓ Yes</td>
+            <td>Direction of edge</td>
+          </tr>
+          <tr>
+            <td class="hl-blue">2nd — Variance</td>
+            <td>Volatility / risk</td>
+            <td style="color: var(--green); font-weight: 600">✓ Yes</td>
+            <td>Size of swings</td>
+          </tr>
+          <tr>
+            <td class="hl-red">3rd — Skewness</td>
+            <td>Crash vs rally asymmetry</td>
+            <td style="color: var(--red); font-weight: 600">✗ No</td>
+            <td>Are losses bigger than gains?</td>
+          </tr>
+          <tr>
+            <td class="hl-red">4th — Kurtosis</td>
+            <td>Fat tails / black swans</td>
+            <td style="color: var(--red); font-weight: 600">✗ No</td>
+            <td>How often do crashes happen?</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-amber">
+        <div class="callout-title">The dangerous conclusion</div>
+        <p
+          style="
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.7;
+            color: var(--ink-soft);
+          "
+        >
+          A strategy can have a Sharpe ratio of 2.0, look completely safe on
+          paper, yet have strong negative skewness and excess kurtosis of 8. It
+          will perform smoothly for months — then lose a year of gains in a
+          single week. The Sharpe ratio never warned you. The 3rd and 4th
+          moments would have.
+        </p>
+      </div>
+
+      <h2>What to Do With This in Practice</h2>
+      <p>
+        Every time you evaluate a strategy — yours or someone else's — run all
+        four moments. Here is a simple function to do it in one line:
+      </p>
+
+      <div class="code-wrap">
+        <div class="code-header">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+          <div class="code-lang">python</div>
+        </div>
+        <pre><span class="c-kw">import</span> pandas <span class="c-kw">as</span> pd
+<span class="c-kw">import</span> scipy.stats <span class="c-kw">as</span> stats
+<span class="c-kw">import</span> numpy <span class="c-kw">as</span> np
+
+<span class="c-kw">def</span> <span class="c-fn">describe_returns</span>(r: pd.Series):
+    geo = (np.<span class="c-fn">prod</span>(<span class="c-num">1</span> + r/<span class="c-num">100</span>) ** (<span class="c-num">1</span>/len(r)) - <span class="c-num">1</span>) * <span class="c-num">100</span>
+    sharpe = r.<span class="c-fn">mean</span>() / r.<span class="c-fn">std</span>() * np.<span class="c-fn">sqrt</span>(<span class="c-num">252</span>)
+    <span class="c-kw">return</span> {
+        <span class="c-str">"arithmetic_mean"</span>: <span class="c-fn">round</span>(r.<span class="c-fn">mean</span>(), <span class="c-num">4</span>),
+        <span class="c-str">"geometric_mean"</span>:  <span class="c-fn">round</span>(geo, <span class="c-num">4</span>),
+        <span class="c-str">"std_dev"</span>:         <span class="c-fn">round</span>(r.<span class="c-fn">std</span>(), <span class="c-num">4</span>),
+        <span class="c-str">"skewness"</span>:        <span class="c-fn">round</span>(stats.<span class="c-fn">skew</span>(r), <span class="c-num">4</span>),
+        <span class="c-str">"kurtosis"</span>:        <span class="c-fn">round</span>(stats.<span class="c-fn">kurtosis</span>(r), <span class="c-num">4</span>),
+        <span class="c-str">"ann_sharpe"</span>:      <span class="c-fn">round</span>(sharpe, <span class="c-num">4</span>),
+    }
+
+<span class="c-cm"># Use it on any return series</span>
+<span class="c-fn">print</span>(<span class="c-fn">describe_returns</span>(your_returns))</pre>
+      </div>
+
+      <hr class="rule" />
+
+      <div class="takeaway">
+        <div class="takeaway-title">Three things to remember from Day 2</div>
+        <p class="takeaway-body">
+          Four numbers describe any return distribution completely. Most traders
+          only look at one. The other three are where the real risk hides.
+        </p>
+        <ul class="takeaway-list">
+          <li>
+            Arithmetic mean lies. Geometric mean is what you actually compound
+            and bank. Always check both.
+          </li>
+          <li>
+            The Sharpe ratio uses only 2 of the 4 moments. A high Sharpe can
+            still blow up if skewness is negative and kurtosis is high.
+          </li>
+          <li>
+            Always run all 4 moments on any strategy before trusting it. Mean,
+            variance, skewness, kurtosis — together they tell the truth.
+          </li>
+        </ul>
+      </div>
+
+      <div class="article-nav">
+        <a href="day1.html"
+          ><span class="nav-dir">← Previous</span
+          ><span class="nav-title">Day 1: Probability Distributions</span></a
+        >
+        <a href="day3.html" class="next"
+          ><span class="nav-dir">Next →</span
+          ><span class="nav-title"
+            >Day 3: Conditional Probability &amp; Bayes</span
+          ></a
+        >
+      </div>
+    </div>
+
+    <div class="article-footer">
+      <div class="footer-series">90-Day Quant Finance Notes</div>
+      <div class="footer-next">
+        Tomorrow — Day 3: Conditional Probability &amp; Bayes Theorem<br />How
+        to update your trading beliefs when new data arrives
+      </div>
+      <div class="footer-tags">
+        <span class="footer-tag">#QuantFinance</span
+        ><span class="footer-tag">#TradingMath</span
+        ><span class="footer-tag">#AlgorithmicTrading</span
+        ><span class="footer-tag">#Python</span
+        ><span class="footer-tag">#Statistics</span
+        ><span class="footer-tag">#DataScience</span
+        ><span class="footer-tag">#Finance</span
+        ><span class="footer-tag">#SriLanka</span
+        ><span class="footer-tag">#Quant</span>
+      </div>
+      <div class="footer-author">
+        Written by <strong>Nadun Sulochana</strong> &nbsp;·&nbsp;
+        github.com/ns530 &nbsp;·&nbsp; nadunsulochana92@gmail.com
+      </div>
+    </div>
+  </body>
+</html>
