@@ -1,460 +1,219 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="google-site-verification"
-      content="SgzPqB0Vckpfji6y3nNSuKVuLHeB-5xwqyW2BR0Zr9g"
-    />
+<head>
+<meta charset="UTF-8">
+<meta name="google-site-verification" content="SgzPqB0Vckpfji6y3nNSuKVuLHeB-5xwqyW2BR0Zr9g">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="Day 5: Maximum Likelihood Estimation explained for traders — fitting Normal and Student-t models to real return data with Python. Part of the 90-Day Quant Finance Notes series by Nadun Sulochana."
-    />
-    <meta
-      name="keywords"
-      content="maximum likelihood estimation, MLE finance, fitting distributions returns, log-likelihood trading, Student-t MLE Python, quant finance tutorial, statistical model fitting, Nadun Sulochana"
-    />
-    <meta name="author" content="Nadun Sulochana" />
-    <meta
-      name="robots"
-      content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1"
-    />
-    <link
-      rel="canonical"
-      href="https://ns530.github.io/quant-finance-notes/day5.html"
-    />
-    <meta property="og:type" content="article" />
-    <meta
-      property="og:url"
-      content="https://ns530.github.io/quant-finance-notes/day5.html"
-    />
-    <meta
-      property="og:title"
-      content="Day 5: Maximum Likelihood Estimation — Quant Finance Notes | Nadun Sulochana"
-    />
-    <meta
-      property="og:description"
-      content="How quants fit distributions to real market return data using MLE. Python code comparing Normal vs Student-t log-likelihood with real terminal output."
-    />
-    <meta property="og:site_name" content="Quant Finance Notes" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta
-      name="twitter:title"
-      content="Day 5: Maximum Likelihood Estimation — Quant Finance Notes"
-    />
-    <meta
-      name="twitter:description"
-      content="Fitting Normal and Student-t distributions to real returns using MLE. Python code + real output."
-    />
-    <meta name="citation_author" content="Nadun Sulochana" />
-    <meta name="geo.region" content="LK" />
-    <meta name="geo.placename" content="Sri Lanka" />
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "Article",
-        "name": "Day 5: Maximum Likelihood Estimation for Traders",
-        "description": "How quants fit distributions to real market return data using MLE — with Python code and real terminal output.",
-        "url": "https://ns530.github.io/quant-finance-notes/day5.html",
-        "author": {
-          "@type": "Person",
-          "name": "Nadun Sulochana",
-          "url": "https://www.linkedin.com/in/nadun-sulochana-41923029b",
-          "sameAs": [
-            "https://github.com/ns530",
-            "https://www.linkedin.com/in/nadun-sulochana-41923029b"
-          ]
-        },
-        "isPartOf": {
-          "@type": "WebSite",
-          "name": "Quant Finance Notes",
-          "url": "https://ns530.github.io/quant-finance-notes/"
-        }
-      }
-    </script>
-    <title>
-      Day 5: Maximum Likelihood Estimation — Quant Finance Notes | Nadun
-      Sulochana
-    </title>
-    <link rel="stylesheet" href="style.css" />
-    <style>
-      /* ── DAY 5 SPECIFIC ── */
-      .intuition-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 14px;
-        margin: 28px 0;
-      }
-      @media (max-width: 560px) {
-        .intuition-grid {
-          grid-template-columns: 1fr;
-        }
-      }
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Day 5: Maximum Likelihood Estimation explained for traders — fitting Normal and Student-t models to real return data with Python. Part of the 90-Day Quant Finance Notes series by Nadun Sulochana.">
+<meta name="keywords" content="maximum likelihood estimation, MLE finance, fitting distributions returns, log-likelihood trading, Student-t MLE Python, quant finance tutorial, statistical model fitting, Nadun Sulochana">
+<meta name="author" content="Nadun Sulochana">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<link rel="canonical" href="https://ns530.github.io/quant-finance-notes/day5.html">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ns530.github.io/quant-finance-notes/day5.html">
+<meta property="og:title" content="Day 5: Maximum Likelihood Estimation — Quant Finance Notes | Nadun Sulochana">
+<meta property="og:description" content="How quants fit distributions to real market return data using MLE. Python code comparing Normal vs Student-t log-likelihood with real terminal output.">
+<meta property="og:site_name" content="Quant Finance Notes">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Day 5: Maximum Likelihood Estimation — Quant Finance Notes">
+<meta name="twitter:description" content="Fitting Normal and Student-t distributions to real returns using MLE. Python code + real output.">
+<meta name="citation_author" content="Nadun Sulochana">
+<meta name="geo.region" content="LK">
+<meta name="geo.placename" content="Sri Lanka">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "name": "Day 5: Maximum Likelihood Estimation for Traders",
+  "description": "How quants fit distributions to real market return data using MLE — with Python code and real terminal output.",
+  "url": "https://ns530.github.io/quant-finance-notes/day5.html",
+  "author": {
+    "@type": "Person",
+    "name": "Nadun Sulochana",
+    "url": "https://www.linkedin.com/in/nadun-sulochana-41923029b",
+    "sameAs": ["https://github.com/ns530","https://www.linkedin.com/in/nadun-sulochana-41923029b"]
+  },
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "Quant Finance Notes",
+    "url": "https://ns530.github.io/quant-finance-notes/"
+  }
+}
+</script>
+<title>Day 5: Maximum Likelihood Estimation — Quant Finance Notes | Nadun Sulochana</title>
+<link rel="stylesheet" href="style.css">
+<style>
+/* ── DAY 5 SPECIFIC ── */
+.intuition-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 28px 0;
+}
+@media(max-width:560px){ .intuition-grid{ grid-template-columns:1fr; } }
 
-      .intuition-card {
-        border-radius: 10px;
-        padding: 22px;
-        border: 1px solid var(--rule);
-      }
-      .ic-bad {
-        background: var(--red-lt);
-        border-color: #e4b8b8;
-      }
-      .ic-good {
-        background: var(--green-lt);
-        border-color: #b8e4c4;
-      }
-      .ic-label {
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        margin-bottom: 8px;
-      }
-      .ic-bad .ic-label {
-        color: var(--red);
-      }
-      .ic-good .ic-label {
-        color: var(--green);
-      }
-      .ic-title {
-        font-family: "Playfair Display", serif;
-        font-size: 17px;
-        font-weight: 700;
-        margin-bottom: 10px;
-        color: var(--ink);
-      }
-      .intuition-card p {
-        font-size: 13px;
-        color: var(--ink-soft);
-        line-height: 1.65;
-        margin: 0;
-      }
-      .ic-score {
-        font-family: "Source Code Pro", monospace;
-        font-size: 13px;
-        font-weight: 600;
-        margin-top: 10px;
-        padding-top: 10px;
-        border-top: 1px solid rgba(0, 0, 0, 0.08);
-      }
-      .ic-bad .ic-score {
-        color: var(--red);
-      }
-      .ic-good .ic-score {
-        color: var(--green);
-      }
+.intuition-card {
+  border-radius: 10px;
+  padding: 22px;
+  border: 1px solid var(--rule);
+}
+.ic-bad  { background: var(--red-lt);    border-color: #E4B8B8; }
+.ic-good { background: var(--green-lt);  border-color: #B8E4C4; }
+.ic-label { font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; margin-bottom:8px; }
+.ic-bad  .ic-label { color: var(--red); }
+.ic-good .ic-label { color: var(--green); }
+.ic-title { font-family:'Playfair Display',serif; font-size:17px; font-weight:700; margin-bottom:10px; color:var(--ink); }
+.intuition-card p { font-size:13px; color:var(--ink-soft); line-height:1.65; margin:0; }
+.ic-score { font-family:'Source Code Pro',monospace; font-size:13px; font-weight:600; margin-top:10px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.08); }
+.ic-bad  .ic-score { color:var(--red); }
+.ic-good .ic-score { color:var(--green); }
 
-      /* MLE formula */
-      .mle-formula {
-        background: var(--accent);
-        border-radius: 12px;
-        padding: 30px 28px;
-        margin: 28px 0;
-        text-align: center;
-      }
-      .mle-formula .f-label {
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-        color: rgba(255, 255, 255, 0.4);
-        margin-bottom: 14px;
-      }
-      .mle-formula .f-main {
-        font-family: "Playfair Display", serif;
-        font-size: clamp(16px, 2.8vw, 24px);
-        color: white;
-        line-height: 1.7;
-        margin-bottom: 12px;
-      }
-      .mle-formula .f-sub {
-        font-size: 13px;
-        color: rgba(255, 255, 255, 0.6);
-        line-height: 1.65;
-      }
+/* MLE formula */
+.mle-formula {
+  background: var(--accent);
+  border-radius: 12px;
+  padding: 30px 28px;
+  margin: 28px 0;
+  text-align: center;
+}
+.mle-formula .f-label { font-size:10px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:rgba(255,255,255,0.4); margin-bottom:14px; }
+.mle-formula .f-main  { font-family:'Playfair Display',serif; font-size:clamp(16px,2.8vw,24px); color:white; line-height:1.7; margin-bottom:12px; }
+.mle-formula .f-sub   { font-size:13px; color:rgba(255,255,255,0.6); line-height:1.65; }
 
-      /* Model comparison table */
-      .model-compare {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 14px;
-        margin: 28px 0;
-      }
-      @media (max-width: 520px) {
-        .model-compare {
-          grid-template-columns: 1fr;
-        }
-      }
-      .mc-card {
-        border-radius: 10px;
-        padding: 22px;
-        border: 1px solid var(--rule);
-        text-align: center;
-      }
-      .mc-normal {
-        background: var(--accent-lt);
-        border-color: #b8cce4;
-      }
-      .mc-t {
-        background: var(--green-lt);
-        border-color: #b8e4c4;
-      }
-      .mc-label {
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        margin-bottom: 8px;
-      }
-      .mc-normal .mc-label {
-        color: var(--accent-mid);
-      }
-      .mc-t .mc-label {
-        color: var(--green);
-      }
-      .mc-val {
-        font-family: "Playfair Display", serif;
-        font-size: 28px;
-        font-weight: 900;
-        line-height: 1;
-        margin-bottom: 4px;
-      }
-      .mc-normal .mc-val {
-        color: var(--accent-mid);
-      }
-      .mc-t .mc-val {
-        color: var(--green);
-      }
-      .mc-desc {
-        font-size: 12px;
-        color: var(--ink-muted);
-        line-height: 1.5;
-        margin-top: 8px;
-      }
-      .mc-winner {
-        font-size: 11px;
-        font-weight: 700;
-        color: var(--green);
-        margin-top: 8px;
-      }
+/* Model comparison table */
+.model-compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 28px 0;
+}
+@media(max-width:520px){ .model-compare{ grid-template-columns:1fr; } }
+.mc-card {
+  border-radius:10px; padding:22px; border:1px solid var(--rule); text-align:center;
+}
+.mc-normal { background:var(--accent-lt); border-color:#B8CCE4; }
+.mc-t      { background:var(--green-lt);  border-color:#B8E4C4; }
+.mc-label  { font-size:10px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; margin-bottom:8px; }
+.mc-normal .mc-label { color:var(--accent-mid); }
+.mc-t      .mc-label { color:var(--green); }
+.mc-val    { font-family:'Playfair Display',serif; font-size:28px; font-weight:900; line-height:1; margin-bottom:4px; }
+.mc-normal .mc-val { color:var(--accent-mid); }
+.mc-t      .mc-val { color:var(--green); }
+.mc-desc   { font-size:12px; color:var(--ink-muted); line-height:1.5; margin-top:8px; }
+.mc-winner { font-size:11px; font-weight:700; color:var(--green); margin-top:8px; }
 
-      /* Steps */
-      .steps-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0;
-      }
-      .step-item {
-        display: flex;
-        gap: 14px;
-        padding: 14px 0;
-        border-bottom: 1px solid var(--cream-dark);
-        align-items: flex-start;
-      }
-      .step-item:last-child {
-        border-bottom: none;
-      }
-      .step-circle {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background: var(--accent);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        font-weight: 700;
-        flex-shrink: 0;
-        margin-top: 2px;
-      }
-      .step-content {
-        flex: 1;
-      }
-      .step-title {
-        font-size: 13.5px;
-        font-weight: 600;
-        color: var(--ink);
-        margin-bottom: 4px;
-      }
-      .step-desc {
-        font-size: 12.5px;
-        color: var(--ink-soft);
-        line-height: 1.65;
-      }
-      .step-formula {
-        font-family: "Source Code Pro", monospace;
-        font-size: 12px;
-        background: var(--cream-dark);
-        padding: 5px 10px;
-        border-radius: 5px;
-        margin-top: 6px;
-        display: inline-block;
-      }
-    </style>
-  </head>
-  <body>
-    <nav class="site-nav">
-      <a class="nav-brand" href="index.html"
-        >Quant Finance <span>Notes</span></a
-      >
-      <div class="nav-links">
-        <a href="index.html">All Articles</a>
-        <a href="https://github.com/ns530" target="_blank">GitHub</a>
-        <a
-          href="https://www.linkedin.com/in/nadun-sulochana-41923029b"
-          target="_blank"
-          >LinkedIn</a
-        >
-        <span class="nav-badge">Day 5 / 90</span>
-      </div>
-    </nav>
+/* Steps */
+.steps-list { display:flex; flex-direction:column; gap:0; }
+.step-item  { display:flex; gap:14px; padding:14px 0; border-bottom:1px solid var(--cream-dark); align-items:flex-start; }
+.step-item:last-child { border-bottom:none; }
+.step-circle { width:32px; height:32px; border-radius:50%; background:var(--accent); color:white; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; flex-shrink:0; margin-top:2px; }
+.step-content { flex:1; }
+.step-title { font-size:13.5px; font-weight:600; color:var(--ink); margin-bottom:4px; }
+.step-desc  { font-size:12.5px; color:var(--ink-soft); line-height:1.65; }
+.step-formula { font-family:'Source Code Pro',monospace; font-size:12px; background:var(--cream-dark); padding:5px 10px; border-radius:5px; margin-top:6px; display:inline-block; }
+</style>
+</head>
+<body>
 
-    <!-- HERO -->
-    <div class="hero">
-      <div class="series-tag">
-        Quant Finance Notes &nbsp;·&nbsp; Day 5 of 90
-      </div>
-      <h1>How Quants <em>Fit Models</em> to Real Market Data</h1>
-      <p class="hero-sub">
-        Maximum Likelihood Estimation is the mathematical engine behind fitting
-        any statistical model to real return data. It answers one question:
-        which parameters make your observed data most probable? With Python
-        proof.
-      </p>
-      <div class="hero-meta">
-        <div class="avatar">NS</div>
-        <div class="meta-text">
-          <strong>Nadun Sulochana</strong>Aspiring Software Architect · BSc
-          Cyber Security · SLTC Research University
-        </div>
-        <div class="day-badge">05 / 90</div>
+<nav class="site-nav">
+  <a class="nav-brand" href="index.html">Quant Finance <span>Notes</span></a>
+  <div class="nav-links">
+    <a href="index.html">All Articles</a>
+    <a href="https://github.com/ns530" target="_blank">GitHub</a>
+    <a href="https://www.linkedin.com/in/nadun-sulochana-41923029b" target="_blank">LinkedIn</a>
+    <span class="nav-badge">Day 5 / 90</span>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="series-tag">Quant Finance Notes &nbsp;·&nbsp; Day 5 of 90</div>
+  <h1>How Quants <em>Fit Models</em> to Real Market Data</h1>
+  <p class="hero-sub">Maximum Likelihood Estimation is the mathematical engine behind fitting any statistical model to real return data. It answers one question: which parameters make your observed data most probable? With Python proof.</p>
+  <div class="hero-meta">
+    <div class="avatar">NS</div>
+    <div class="meta-text"><strong>Nadun Sulochana</strong>Aspiring Software Architect · BSc Cyber Security · SLTC Research University</div>
+    <div class="day-badge">05 / 90</div>
+  </div>
+</div>
+
+<!-- BODY -->
+<div class="article-body">
+
+  <p class="lead">In Day 1 we chose distributions. In Day 2 we calculated their moments. But how do you actually fit a distribution to your real return data? That is exactly what Maximum Likelihood Estimation answers — and it is the foundation of almost every model in quantitative finance.</p>
+
+  <h2>The Core Intuition — Before Any Math</h2>
+  <p>Imagine you observe 252 daily returns from a stock. You want to fit a Normal distribution to them. The Normal distribution has two parameters — mean (μ) and standard deviation (σ). MLE asks: <strong>which values of μ and σ make the data you actually observed most probable?</strong></p>
+
+  <div class="intuition-grid">
+    <div class="intuition-card ic-bad">
+      <div class="ic-label">Bad parameter guess</div>
+      <div class="ic-title">μ = 5%, σ = 0.1%</div>
+      <p>The model says daily returns should cluster tightly around 5%. But your real data has returns ranging from −4% to +4%. This model makes your observed data extremely unlikely.</p>
+      <div class="ic-score">Log-likelihood ≈ very negative</div>
+    </div>
+    <div class="intuition-card ic-good">
+      <div class="ic-label">MLE optimal parameters</div>
+      <div class="ic-title">μ = 0.044%, σ = 1.448%</div>
+      <p>These parameters centre the distribution exactly where your data lives and spread it to match the real volatility. Your observed data becomes as probable as possible under this model.</p>
+      <div class="ic-score">Log-likelihood = −450.85 (maximum)</div>
+    </div>
+  </div>
+
+  <h2>The Mathematics of MLE</h2>
+  <p>For a dataset of n independent observations x₁, x₂, ..., xₙ and a distribution with parameters θ, the likelihood function is the probability of observing your exact data under those parameters:</p>
+
+  <div class="mle-formula">
+    <div class="f-label">Maximum Likelihood Estimation</div>
+    <div class="f-main">
+      L(θ) = ∏ f(xᵢ | θ) &nbsp;&nbsp;→&nbsp;&nbsp; maximize over θ<br/>
+      ℓ(θ) = Σ log f(xᵢ | θ) &nbsp;&nbsp;→&nbsp;&nbsp; log-likelihood (easier to compute)
+    </div>
+    <div class="f-sub">
+      Multiplying tiny probabilities causes underflow → we take log and sum instead<br/>
+      log turns products into sums · log is monotonic so maximizing ℓ = maximizing L<br/>
+      MLE solution: θ̂ = argmax ℓ(θ)
+    </div>
+  </div>
+
+  <h2>MLE for Normal Distribution — Step by Step</h2>
+
+  <div class="steps-list">
+    <div class="step-item">
+      <div class="step-circle">1</div>
+      <div class="step-content">
+        <div class="step-title">Write the log-likelihood</div>
+        <div class="step-desc">For Normal distribution, the log-likelihood of n observations is:</div>
+        <div class="step-formula">ℓ(μ,σ) = −n/2·log(2πσ²) − (1/2σ²)·Σ(xᵢ−μ)²</div>
       </div>
     </div>
-
-    <!-- BODY -->
-    <div class="article-body">
-      <p class="lead">
-        In Day 1 we chose distributions. In Day 2 we calculated their moments.
-        But how do you actually fit a distribution to your real return data?
-        That is exactly what Maximum Likelihood Estimation answers — and it is
-        the foundation of almost every model in quantitative finance.
-      </p>
-
-      <h2>The Core Intuition — Before Any Math</h2>
-      <p>
-        Imagine you observe 252 daily returns from a stock. You want to fit a
-        Normal distribution to them. The Normal distribution has two parameters
-        — mean (μ) and standard deviation (σ). MLE asks:
-        <strong
-          >which values of μ and σ make the data you actually observed most
-          probable?</strong
-        >
-      </p>
-
-      <div class="intuition-grid">
-        <div class="intuition-card ic-bad">
-          <div class="ic-label">Bad parameter guess</div>
-          <div class="ic-title">μ = 5%, σ = 0.1%</div>
-          <p>
-            The model says daily returns should cluster tightly around 5%. But
-            your real data has returns ranging from −4% to +4%. This model makes
-            your observed data extremely unlikely.
-          </p>
-          <div class="ic-score">Log-likelihood ≈ very negative</div>
-        </div>
-        <div class="intuition-card ic-good">
-          <div class="ic-label">MLE optimal parameters</div>
-          <div class="ic-title">μ = 0.044%, σ = 1.448%</div>
-          <p>
-            These parameters centre the distribution exactly where your data
-            lives and spread it to match the real volatility. Your observed data
-            becomes as probable as possible under this model.
-          </p>
-          <div class="ic-score">Log-likelihood = −450.85 (maximum)</div>
-        </div>
+    <div class="step-item">
+      <div class="step-circle">2</div>
+      <div class="step-content">
+        <div class="step-title">Take derivatives and set to zero</div>
+        <div class="step-desc">Differentiate with respect to μ and σ, set both to zero — this gives the MLE solutions analytically:</div>
+        <div class="step-formula">μ̂ = (1/n)·Σxᵢ = sample mean &nbsp;·&nbsp; σ̂² = (1/n)·Σ(xᵢ−μ̂)²</div>
       </div>
-
-      <h2>The Mathematics of MLE</h2>
-      <p>
-        For a dataset of n independent observations x₁, x₂, ..., xₙ and a
-        distribution with parameters θ, the likelihood function is the
-        probability of observing your exact data under those parameters:
-      </p>
-
-      <div class="mle-formula">
-        <div class="f-label">Maximum Likelihood Estimation</div>
-        <div class="f-main">
-          L(θ) = ∏ f(xᵢ | θ) &nbsp;&nbsp;→&nbsp;&nbsp; maximize over θ<br />
-          ℓ(θ) = Σ log f(xᵢ | θ) &nbsp;&nbsp;→&nbsp;&nbsp; log-likelihood
-          (easier to compute)
-        </div>
-        <div class="f-sub">
-          Multiplying tiny probabilities causes underflow → we take log and sum
-          instead<br />
-          log turns products into sums · log is monotonic so maximizing ℓ =
-          maximizing L<br />
-          MLE solution: θ̂ = argmax ℓ(θ)
-        </div>
+    </div>
+    <div class="step-item">
+      <div class="step-circle">3</div>
+      <div class="step-content">
+        <div class="step-title">Note: MLE sigma uses n, not n−1</div>
+        <div class="step-desc">MLE gives a biased estimate of sigma (divides by n). The unbiased estimator divides by n−1. For large samples the difference is tiny, but it matters for small datasets.</div>
+        <div class="step-formula">MLE: σ̂ = std(ddof=0) &nbsp;·&nbsp; Unbiased: s = std(ddof=1)</div>
       </div>
+    </div>
+  </div>
 
-      <h2>MLE for Normal Distribution — Step by Step</h2>
+  <h2>Python Code — MLE on Real Return Data</h2>
 
-      <div class="steps-list">
-        <div class="step-item">
-          <div class="step-circle">1</div>
-          <div class="step-content">
-            <div class="step-title">Write the log-likelihood</div>
-            <div class="step-desc">
-              For Normal distribution, the log-likelihood of n observations is:
-            </div>
-            <div class="step-formula">
-              ℓ(μ,σ) = −n/2·log(2πσ²) − (1/2σ²)·Σ(xᵢ−μ)²
-            </div>
-          </div>
-        </div>
-        <div class="step-item">
-          <div class="step-circle">2</div>
-          <div class="step-content">
-            <div class="step-title">Take derivatives and set to zero</div>
-            <div class="step-desc">
-              Differentiate with respect to μ and σ, set both to zero — this
-              gives the MLE solutions analytically:
-            </div>
-            <div class="step-formula">
-              μ̂ = (1/n)·Σxᵢ = sample mean &nbsp;·&nbsp; σ̂² = (1/n)·Σ(xᵢ−μ̂)²
-            </div>
-          </div>
-        </div>
-        <div class="step-item">
-          <div class="step-circle">3</div>
-          <div class="step-content">
-            <div class="step-title">Note: MLE sigma uses n, not n−1</div>
-            <div class="step-desc">
-              MLE gives a biased estimate of sigma (divides by n). The unbiased
-              estimator divides by n−1. For large samples the difference is
-              tiny, but it matters for small datasets.
-            </div>
-            <div class="step-formula">
-              MLE: σ̂ = std(ddof=0) &nbsp;·&nbsp; Unbiased: s = std(ddof=1)
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <h2>Python Code — MLE on Real Return Data</h2>
-
-      <div class="code-wrap">
-        <div class="code-header">
-          <div class="dot dot-r"></div>
-          <div class="dot dot-y"></div>
-          <div class="dot dot-g"></div>
-          <div class="code-lang">python — MLE for Normal distribution</div>
-        </div>
-        <pre><span class="c-kw">import</span> numpy <span class="c-kw">as</span> np
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — MLE for Normal distribution</div>
+    </div>
+    <pre><span class="c-kw">import</span> numpy <span class="c-kw">as</span> np
 <span class="c-kw">from</span> scipy <span class="c-kw">import</span> stats
 
 np.random.<span class="c-fn">seed</span>(<span class="c-num">42</span>)
@@ -480,71 +239,36 @@ np.random.<span class="c-fn">seed</span>(<span class="c-num">42</span>)
 <span class="c-var">ci_low</span>  = mu_mle - <span class="c-num">1.96</span> * se_mu
 <span class="c-var">ci_high</span> = mu_mle + <span class="c-num">1.96</span> * se_mu
 <span class="c-fn">print</span>(<span class="c-str">f"95% CI for mu: [{ci_low:.4f}, {ci_high:.4f}]"</span>)</pre>
-      </div>
+  </div>
 
-      <h3>Actual Output</h3>
-      <div class="output-wrap">
-        <div class="output-header">▶ python3 mle_normal.py</div>
-        <div class="output-body">
-          <div>
-            <span class="out-ln"
-              >MLE
-              mu:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span
-            ><span class="out-n">0.0444%</span>
-          </div>
-          <div>
-            <span class="out-ln">MLE sigma:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span
-            ><span class="out-n">1.4479%</span>
-          </div>
-          <div>
-            <span class="out-ln">Unbiased sigma:</span
-            ><span class="out-n">1.4508%</span>
-          </div>
-          <div>
-            <span class="out-ln">Log-likelihood:</span
-            ><span class="out-n">-450.8485</span>
-          </div>
-          <div>
-            <span class="out-ln">95% CI for mu: [</span
-            ><span class="out-n">-0.1344</span><span class="out-ln">, </span
-            ><span class="out-n">0.2231</span><span class="out-ln">]</span>
-          </div>
-        </div>
-      </div>
+  <h3>Actual Output</h3>
+  <div class="output-wrap">
+    <div class="output-header">▶ python3 mle_normal.py</div>
+    <div class="output-body">
+      <div><span class="out-ln">MLE mu:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="out-n">0.0444%</span></div>
+      <div><span class="out-ln">MLE sigma:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="out-n">1.4479%</span></div>
+      <div><span class="out-ln">Unbiased sigma:</span><span class="out-n">1.4508%</span></div>
+      <div><span class="out-ln">Log-likelihood:</span><span class="out-n">-450.8485</span></div>
+      <div><span class="out-ln">95% CI for mu: [</span><span class="out-n">-0.1344</span><span class="out-ln">, </span><span class="out-n">0.2231</span><span class="out-ln">]</span></div>
+    </div>
+  </div>
 
-      <div class="callout callout-amber">
-        <div class="callout-title">The CI tells you something important</div>
-        <p
-          style="
-            margin: 0;
-            font-size: 14px;
-            color: var(--ink-soft);
-            line-height: 1.75;
-          "
-        >
-          MLE mu = <strong>0.044%</strong> per day sounds positive. But the 95%
-          CI is <strong>[−0.134, 0.223]</strong> — it crosses zero. This means
-          with 252 data points we cannot statistically confirm there is any
-          positive edge at all. You need far more data to prove a mean return is
-          real. This is the CLT lesson from Day 4 in action.
-        </p>
-      </div>
+  <div class="callout callout-amber">
+    <div class="callout-title">The CI tells you something important</div>
+    <p style="margin:0;font-size:14px;color:var(--ink-soft);line-height:1.75;">
+      MLE mu = <strong>0.044%</strong> per day sounds positive. But the 95% CI is <strong>[−0.134, 0.223]</strong> — it crosses zero. This means with 252 data points we cannot statistically confirm there is any positive edge at all. You need far more data to prove a mean return is real. This is the CLT lesson from Day 4 in action.
+    </p>
+  </div>
 
-      <h2>MLE for Student-t — Numerical Optimisation</h2>
-      <p>
-        For the Normal distribution, MLE has a clean analytical solution. For
-        Student-t it does not — we must use numerical optimisation. This is
-        where scipy's minimize function comes in.
-      </p>
+  <h2>MLE for Student-t — Numerical Optimisation</h2>
+  <p>For the Normal distribution, MLE has a clean analytical solution. For Student-t it does not — we must use numerical optimisation. This is where scipy's minimize function comes in.</p>
 
-      <div class="code-wrap">
-        <div class="code-header">
-          <div class="dot dot-r"></div>
-          <div class="dot dot-y"></div>
-          <div class="dot dot-g"></div>
-          <div class="code-lang">python — MLE for Student-t (fat tails)</div>
-        </div>
-        <pre><span class="c-kw">from</span> scipy.stats <span class="c-kw">import</span> t <span class="c-kw">as</span> t_dist
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — MLE for Student-t (fat tails)</div>
+    </div>
+    <pre><span class="c-kw">from</span> scipy.stats <span class="c-kw">import</span> t <span class="c-kw">as</span> t_dist
 <span class="c-kw">from</span> scipy.optimize <span class="c-kw">import</span> minimize
 
 <span class="c-kw">def</span> <span class="c-fn">neg_loglik_t</span>(params, data):
@@ -568,128 +292,76 @@ np.random.<span class="c-fn">seed</span>(<span class="c-num">42</span>)
 <span class="c-fn">print</span>(<span class="c-str">f"MLE loc:   {loc_mle:.4f}%"</span>)
 <span class="c-fn">print</span>(<span class="c-str">f"MLE scale: {scale_mle:.4f}%"</span>)
 <span class="c-fn">print</span>(<span class="c-str">f"Log-likelihood: {-result.fun:.4f}"</span>)</pre>
-      </div>
+  </div>
 
-      <div class="output-wrap">
-        <div class="output-header">▶ python3 mle_student_t.py</div>
-        <div class="output-body">
-          <div>
-            <span class="out-ln">MLE df:&nbsp;&nbsp;&nbsp;&nbsp;</span
-            ><span class="out-n">16.7505</span>
-          </div>
-          <div>
-            <span class="out-ln">MLE loc:&nbsp;&nbsp;&nbsp;</span
-            ><span class="out-n">0.0288%</span>
-          </div>
-          <div>
-            <span class="out-ln">MLE scale:&nbsp;</span
-            ><span class="out-n">1.3578%</span>
-          </div>
-          <div>
-            <span class="out-ln">Log-likelihood:</span
-            ><span class="out-n">-449.9194</span>
-          </div>
-        </div>
-      </div>
+  <div class="output-wrap">
+    <div class="output-header">▶ python3 mle_student_t.py</div>
+    <div class="output-body">
+      <div><span class="out-ln">MLE df:&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="out-n">16.7505</span></div>
+      <div><span class="out-ln">MLE loc:&nbsp;&nbsp;&nbsp;</span><span class="out-n">0.0288%</span></div>
+      <div><span class="out-ln">MLE scale:&nbsp;</span><span class="out-n">1.3578%</span></div>
+      <div><span class="out-ln">Log-likelihood:</span><span class="out-n">-449.9194</span></div>
+    </div>
+  </div>
 
-      <p>
-        df = 16.75 means the MLE found a distribution with
-        <strong>mildly fat tails</strong> — not as extreme as the real S&P 500
-        (df ≈ 3–5) but fatter than Normal (df = ∞). With more years of data on
-        real returns, df would typically estimate much lower — closer to 3–6.
-      </p>
+  <p>df = 16.75 means the MLE found a distribution with <strong>mildly fat tails</strong> — not as extreme as the real S&P 500 (df ≈ 3–5) but fatter than Normal (df = ∞). With more years of data on real returns, df would typically estimate much lower — closer to 3–6.</p>
 
-      <h2>Which Model Fits Better? — Model Comparison</h2>
-      <p>
-        Log-likelihood tells you directly which model fits your data better.
-        Higher (less negative) = better fit.
-      </p>
+  <h2>Which Model Fits Better? — Model Comparison</h2>
+  <p>Log-likelihood tells you directly which model fits your data better. Higher (less negative) = better fit.</p>
 
-      <div class="model-compare">
-        <div class="mc-card mc-normal">
-          <div class="mc-label">Normal Distribution</div>
-          <div class="mc-val">−450.85</div>
-          <div class="mc-desc">Log-likelihood<br />MLE: μ=0.044%, σ=1.448%</div>
-        </div>
-        <div class="mc-card mc-t">
-          <div class="mc-label">Student-t Distribution</div>
-          <div class="mc-val">−449.92</div>
-          <div class="mc-desc">
-            Log-likelihood<br />MLE: df=16.75, loc=0.029%
-          </div>
-          <div class="mc-winner">✓ Better fit by 0.93 log-likelihood units</div>
-        </div>
-      </div>
+  <div class="model-compare">
+    <div class="mc-card mc-normal">
+      <div class="mc-label">Normal Distribution</div>
+      <div class="mc-val">−450.85</div>
+      <div class="mc-desc">Log-likelihood<br/>MLE: μ=0.044%, σ=1.448%</div>
+    </div>
+    <div class="mc-card mc-t">
+      <div class="mc-label">Student-t Distribution</div>
+      <div class="mc-val">−449.92</div>
+      <div class="mc-desc">Log-likelihood<br/>MLE: df=16.75, loc=0.029%</div>
+      <div class="mc-winner">✓ Better fit by 0.93 log-likelihood units</div>
+    </div>
+  </div>
 
-      <div class="code-wrap">
-        <div class="code-header">
-          <div class="dot dot-r"></div>
-          <div class="dot dot-y"></div>
-          <div class="dot dot-g"></div>
-          <div class="code-lang">python — model comparison</div>
-        </div>
-        <pre><span class="c-var">ll_normal</span> = np.<span class="c-fn">sum</span>(stats.norm.<span class="c-fn">logpdf</span>(returns, mu_mle, sigma_mle))
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — model comparison</div>
+    </div>
+    <pre><span class="c-var">ll_normal</span> = np.<span class="c-fn">sum</span>(stats.norm.<span class="c-fn">logpdf</span>(returns, mu_mle, sigma_mle))
 <span class="c-var">ll_t</span>      = -result.fun
 
 <span class="c-fn">print</span>(<span class="c-str">f"Normal log-likelihood:    {ll_normal:.4f}"</span>)
 <span class="c-fn">print</span>(<span class="c-str">f"Student-t log-likelihood: {ll_t:.4f}"</span>)
 <span class="c-fn">print</span>(<span class="c-str">f"Difference:               {ll_t - ll_normal:.4f}"</span>)
 <span class="c-fn">print</span>(<span class="c-str">f"Student-t fits better:    {ll_t > ll_normal}"</span>)</pre>
-      </div>
+  </div>
 
-      <div class="output-wrap">
-        <div class="output-header">▶ python3 model_comparison.py</div>
-        <div class="output-body">
-          <div>
-            <span class="out-ln"
-              >Normal log-likelihood:&nbsp;&nbsp;&nbsp;&nbsp;</span
-            ><span class="out-n">-450.8485</span>
-          </div>
-          <div>
-            <span class="out-ln">Student-t log-likelihood:&nbsp;</span
-            ><span class="out-n">-449.9194</span>
-          </div>
-          <div>
-            <span class="out-ln"
-              >Difference:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span
-            ><span class="out-n">0.9291</span>
-          </div>
-          <div>
-            <span class="out-ln"
-              >Student-t fits better:&nbsp;&nbsp;&nbsp;&nbsp;</span
-            ><span class="out-n">True</span>
-          </div>
-        </div>
-      </div>
+  <div class="output-wrap">
+    <div class="output-header">▶ python3 model_comparison.py</div>
+    <div class="output-body">
+      <div><span class="out-ln">Normal log-likelihood:&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="out-n">-450.8485</span></div>
+      <div><span class="out-ln">Student-t log-likelihood:&nbsp;</span><span class="out-n">-449.9194</span></div>
+      <div><span class="out-ln">Difference:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="out-n">0.9291</span></div>
+      <div><span class="out-ln">Student-t fits better:&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="out-n">True</span></div>
+    </div>
+  </div>
 
-      <div class="callout callout-green">
-        <div class="callout-title">What this comparison tells you</div>
-        <p
-          style="
-            margin: 0;
-            font-size: 14px;
-            color: var(--ink-soft);
-            line-height: 1.75;
-          "
-        >
-          Student-t has a <strong>higher log-likelihood</strong> — it fits the
-          data better than Normal even on simulated Normal data. On real S&P 500
-          returns the difference would be far larger. This is why serious quants
-          always run MLE on both and compare — never assume a distribution, let
-          the data choose.
-        </p>
-      </div>
+  <div class="callout callout-green">
+    <div class="callout-title">What this comparison tells you</div>
+    <p style="margin:0;font-size:14px;color:var(--ink-soft);line-height:1.75;">
+      Student-t has a <strong>higher log-likelihood</strong> — it fits the data better than Normal even on simulated Normal data. On real S&P 500 returns the difference would be far larger. This is why serious quants always run MLE on both and compare — never assume a distribution, let the data choose.
+    </p>
+  </div>
 
-      <h2>MLE in 5 Lines — Your Reusable Function</h2>
+  <h2>MLE in 5 Lines — Your Reusable Function</h2>
 
-      <div class="code-wrap">
-        <div class="code-header">
-          <div class="dot dot-r"></div>
-          <div class="dot dot-y"></div>
-          <div class="dot dot-g"></div>
-          <div class="code-lang">python — production-ready MLE fitter</div>
-        </div>
-        <pre><span class="c-kw">from</span> scipy <span class="c-kw">import</span> stats
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — production-ready MLE fitter</div>
+    </div>
+    <pre><span class="c-kw">from</span> scipy <span class="c-kw">import</span> stats
 <span class="c-kw">import</span> numpy <span class="c-kw">as</span> np
 
 <span class="c-kw">def</span> <span class="c-fn">fit_best_distribution</span>(returns: np.ndarray) -> dict:
@@ -720,91 +392,59 @@ results = <span class="c-fn">fit_best_distribution</span>(returns)
 <span class="c-fn">print</span>(<span class="c-str">f"Best fit: {results['best_fit']}"</span>)
 <span class="c-fn">print</span>(<span class="c-str">f"Normal  AIC: {results['normal']['aic']:.2f}"</span>)
 <span class="c-fn">print</span>(<span class="c-str">f"Student AIC: {results['student_t']['aic']:.2f}"</span>)</pre>
-      </div>
+  </div>
 
-      <div class="callout callout-blue">
-        <div class="callout-title">
-          The AIC trick — penalising model complexity
-        </div>
-        <p
-          style="
-            margin: 0;
-            font-size: 14px;
-            color: var(--ink-soft);
-            line-height: 1.75;
-          "
-        >
-          Log-likelihood always improves when you add more parameters. AIC
-          (Akaike Information Criterion) = 2k − 2ℓ penalises extra parameters.
-          Normal has 2 parameters, Student-t has 3. If Student-t still wins on
-          AIC, the extra parameter is genuinely worth it. Lower AIC = better
-          model.
-        </p>
-      </div>
+  <div class="callout callout-blue">
+    <div class="callout-title">The AIC trick — penalising model complexity</div>
+    <p style="margin:0;font-size:14px;color:var(--ink-soft);line-height:1.75;">
+      Log-likelihood always improves when you add more parameters. AIC (Akaike Information Criterion) = 2k − 2ℓ penalises extra parameters. Normal has 2 parameters, Student-t has 3. If Student-t still wins on AIC, the extra parameter is genuinely worth it. Lower AIC = better model.
+    </p>
+  </div>
 
-      <hr class="rule" />
+  <hr class="rule"/>
 
-      <div class="takeaway">
-        <div class="takeaway-title">Three things to remember from Day 5</div>
-        <p class="takeaway-body">
-          MLE does not assume a distribution — it finds the parameters that make
-          your observed data most probable under whichever distribution you
-          choose. That is a fundamentally different and more honest approach
-          than assuming Normal and moving on.
-        </p>
-        <ul class="takeaway-list">
-          <li>
-            For Normal distribution, MLE has a clean analytical solution: μ̂ =
-            sample mean, σ̂ = population std (ddof=0). For other distributions,
-            numerical optimisation via scipy.optimize is the standard approach.
-          </li>
-          <li>
-            Always compare models using log-likelihood or AIC — never assume a
-            distribution fits without checking. Student-t beat Normal even on
-            simulated Normal data in our test.
-          </li>
-          <li>
-            The 95% CI for our MLE mean estimate was [−0.134, 0.223] — crossing
-            zero. With 252 data points you cannot prove any positive edge
-            exists. MLE quantifies your uncertainty, not just your estimate.
-          </li>
-        </ul>
-      </div>
+  <div class="takeaway">
+    <div class="takeaway-title">Three things to remember from Day 5</div>
+    <p class="takeaway-body">MLE does not assume a distribution — it finds the parameters that make your observed data most probable under whichever distribution you choose. That is a fundamentally different and more honest approach than assuming Normal and moving on.</p>
+    <ul class="takeaway-list">
+      <li>For Normal distribution, MLE has a clean analytical solution: μ̂ = sample mean, σ̂ = population std (ddof=0). For other distributions, numerical optimisation via scipy.optimize is the standard approach.</li>
+      <li>Always compare models using log-likelihood or AIC — never assume a distribution fits without checking. Student-t beat Normal even on simulated Normal data in our test.</li>
+      <li>The 95% CI for our MLE mean estimate was [−0.134, 0.223] — crossing zero. With 252 data points you cannot prove any positive edge exists. MLE quantifies your uncertainty, not just your estimate.</li>
+    </ul>
+  </div>
 
-      <div class="article-nav">
-        <a href="day4.html">
-          <span class="nav-dir">← Previous</span>
-          <span class="nav-title">Day 4: Central Limit Theorem &amp; LLN</span>
-        </a>
-        <a href="index.html" class="next">
-          <span class="nav-dir">All Articles</span>
-          <span class="nav-title">View Full 90-Day Series →</span>
-        </a>
-      </div>
-    </div>
+  <div class="article-nav">
+    <a href="day4.html">
+      <span class="nav-dir">← Previous</span>
+      <span class="nav-title">Day 4: Central Limit Theorem &amp; LLN</span>
+    </a>
+    <a href="day6.html" class="next">
+      <span class="nav-dir">Next →</span>
+      <span class="nav-title">Day 6: Hypothesis Testing in Finance</span>
+    </a>
+  </div>
 
-    <div class="article-footer">
-      <div class="footer-series">Quant Finance Notes — 90-Day Series</div>
-      <div class="footer-next">
-        Tomorrow — Day 6: Hypothesis Testing in Finance<br />Does your strategy
-        actually work, or is it just luck?
-      </div>
-      <div class="footer-tags">
-        <span class="footer-tag">#QuantFinance</span>
-        <span class="footer-tag">#MLE</span>
-        <span class="footer-tag">#MaximumLikelihood</span>
-        <span class="footer-tag">#TradingMath</span>
-        <span class="footer-tag">#AlgorithmicTrading</span>
-        <span class="footer-tag">#Python</span>
-        <span class="footer-tag">#Statistics</span>
-        <span class="footer-tag">#DataScience</span>
-        <span class="footer-tag">#Finance</span>
-        <span class="footer-tag">#SriLanka</span>
-      </div>
-      <div class="footer-author">
-        Written by <strong>Nadun Sulochana</strong> &nbsp;·&nbsp;
-        github.com/ns530 &nbsp;·&nbsp; nadunsulochana92@gmail.com
-      </div>
-    </div>
-  </body>
+</div>
+
+<div class="article-footer">
+  <div class="footer-series">Quant Finance Notes — 90-Day Series</div>
+  <div class="footer-next">Tomorrow — Day 6: Hypothesis Testing in Finance<br/>Does your strategy actually work, or is it just luck?</div>
+  <div class="footer-tags">
+    <span class="footer-tag">#QuantFinance</span>
+    <span class="footer-tag">#MLE</span>
+    <span class="footer-tag">#MaximumLikelihood</span>
+    <span class="footer-tag">#TradingMath</span>
+    <span class="footer-tag">#AlgorithmicTrading</span>
+    <span class="footer-tag">#Python</span>
+    <span class="footer-tag">#Statistics</span>
+    <span class="footer-tag">#DataScience</span>
+    <span class="footer-tag">#Finance</span>
+    <span class="footer-tag">#SriLanka</span>
+  </div>
+  <div class="footer-author">
+    Written by <strong>Nadun Sulochana</strong> &nbsp;·&nbsp; github.com/ns530 &nbsp;·&nbsp; nadunsulochana92@gmail.com
+  </div>
+</div>
+
+</body>
 </html>
