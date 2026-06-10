@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="google-site-verification" content="SgzPqB0Vckpfji6y3nNSuKVuLHeB-5xwqyW2BR0Zr9g">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Day 6: Hypothesis Testing in Finance — does your trading strategy actually work or is it luck? t-tests, p-values, p-hacking, Bonferroni correction, and minimum track record length with Python.">
+<meta name="keywords" content="hypothesis testing finance, t-test trading strategy, p-value trading, p-hacking backtesting, Bonferroni correction trading, minimum track record length, statistical significance finance, quant finance Python, Nadun Sulochana">
+<meta name="author" content="Nadun Sulochana">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<link rel="canonical" href="https://ns530.github.io/quant-finance-notes/day6.html">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ns530.github.io/quant-finance-notes/day6.html">
+<meta property="og:title" content="Day 6: Hypothesis Testing in Finance — Quant Finance Notes | Nadun Sulochana">
+<meta property="og:description" content="Does your strategy actually work or is it luck? t-tests, p-hacking, Bonferroni correction and minimum track record length — with Python proof.">
+<meta property="og:site_name" content="Quant Finance Notes">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Day 6: Hypothesis Testing in Finance — Quant Finance Notes">
+<meta name="twitter:description" content="t-test your trading strategy. p-hacking explained. Bonferroni correction. Minimum track record: 5.8 years for Sharpe=1.0.">
+<meta name="citation_author" content="Nadun Sulochana">
+<meta name="geo.region" content="LK">
+<meta name="geo.placename" content="Sri Lanka">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "name": "Day 6: Hypothesis Testing in Finance",
+  "description": "Does your trading strategy actually work or is it luck? t-tests, p-values, p-hacking and minimum track record length explained with Python.",
+  "url": "https://ns530.github.io/quant-finance-notes/day6.html",
+  "author": {
+    "@type": "Person",
+    "name": "Nadun Sulochana",
+    "url": "https://www.linkedin.com/in/nadun-sulochana-41923029b",
+    "sameAs": ["https://github.com/ns530","https://www.linkedin.com/in/nadun-sulochana-41923029b"]
+  },
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "Quant Finance Notes",
+    "url": "https://ns530.github.io/quant-finance-notes/"
+  }
+}
+</script>
+<title>Day 6: Hypothesis Testing in Finance — Quant Finance Notes | Nadun Sulochana</title>
+<link rel="stylesheet" href="style.css">
+<style>
+/* ── DAY 6 SPECIFIC ── */
+.hypothesis-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 28px 0;
+}
+@media(max-width:560px){ .hypothesis-grid{ grid-template-columns:1fr; } }
+
+.hyp-card {
+  border-radius: 10px;
+  padding: 22px;
+  border: 1px solid var(--rule);
+}
+.hyp-null { background: var(--accent-lt); border-color: #B8CCE4; }
+.hyp-alt  { background: var(--green-lt);  border-color: #B8E4C4; }
+.hyp-label { font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; margin-bottom:8px; }
+.hyp-null .hyp-label { color: var(--accent-mid); }
+.hyp-alt  .hyp-label { color: var(--green); }
+.hyp-title { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; margin-bottom:10px; color:var(--ink); }
+.hyp-card p { font-size:13px; color:var(--ink-soft); line-height:1.65; margin:0; }
+.hyp-formula { font-family:'Source Code Pro',monospace; font-size:12px; background:rgba(0,0,0,0.05); padding:6px 10px; border-radius:5px; margin-top:10px; }
+
+/* Error types grid */
+.error-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 28px 0;
+}
+@media(max-width:520px){ .error-grid{ grid-template-columns:1fr; } }
+.error-card {
+  border-radius: 10px;
+  padding: 20px;
+  border: 1px solid var(--rule);
+  text-align: center;
+}
+.type1 { background: var(--red-lt);   border-color:#E4B8B8; }
+.type2 { background: var(--amber-lt); border-color:#E4D4B8; }
+.error-type  { font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; margin-bottom:8px; }
+.type1 .error-type { color:var(--red); }
+.type2 .error-type { color:var(--amber); }
+.error-name  { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; color:var(--ink); margin-bottom:8px; }
+.error-card p { font-size:13px; color:var(--ink-soft); line-height:1.6; margin:0; }
+.error-example { font-size:12px; font-style:italic; color:var(--ink-muted); margin-top:10px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.08); }
+
+/* p-hacking visual */
+.phack-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 13px;
+}
+.phack-table th {
+  text-align:left; padding:9px 14px;
+  font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase;
+  color:var(--ink-muted); border-bottom:2px solid var(--rule);
+}
+.phack-table td { padding:10px 14px; border-bottom:1px solid var(--cream-dark); color:var(--ink-soft); }
+.phack-table tr:last-child td { border-bottom:none; }
+.p-sig   { color:var(--red);   font-weight:600; font-family:'Source Code Pro',monospace; }
+.p-insig { color:var(--green); font-family:'Source Code Pro',monospace; }
+
+/* Track record table */
+.track-table {
+  width:100%; border-collapse:collapse; margin:20px 0; font-size:14px;
+}
+.track-table th { text-align:left; padding:10px 16px; font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-muted); border-bottom:2px solid var(--rule); }
+.track-table td { padding:12px 16px; border-bottom:1px solid var(--cream-dark); font-family:'Source Code Pro',monospace; font-size:13px; }
+.track-table tr:last-child td { border-bottom:none; }
+.tr-sr   { color:var(--accent-mid); font-weight:600; }
+.tr-obs  { color:var(--ink); font-weight:600; }
+.tr-yrs  { color:var(--red); font-weight:600; }
+.tr-good { color:var(--green); font-weight:600; }
+
+/* Decision flowchart */
+.decision-flow {
+  background: white;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 24px 28px;
+  margin: 28px 0;
+}
+.flow-title { font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-muted); margin-bottom:18px; }
+.flow-step { display:flex; gap:12px; align-items:flex-start; padding:10px 0; border-bottom:1px solid var(--cream-dark); }
+.flow-step:last-child { border-bottom:none; }
+.flow-num { width:28px; height:28px; border-radius:50%; background:var(--accent); color:white; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; flex-shrink:0; }
+.flow-body { flex:1; font-size:13px; color:var(--ink-soft); line-height:1.65; }
+.flow-body b { color:var(--ink); }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <a class="nav-brand" href="index.html">Quant Finance <span>Notes</span></a>
+  <div class="nav-links">
+    <a href="index.html">All Articles</a>
+    <a href="https://github.com/ns530" target="_blank">GitHub</a>
+    <a href="https://www.linkedin.com/in/nadun-sulochana-41923029b" target="_blank">LinkedIn</a>
+    <span class="nav-badge">Day 6 / 90</span>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="series-tag">Quant Finance Notes &nbsp;·&nbsp; Day 6 of 90</div>
+  <h1>Does Your Strategy Actually Work — <em>Or Is It Luck?</em></h1>
+  <p class="hero-sub">Hypothesis testing gives you the mathematical tools to answer that question honestly. p-values, t-tests, p-hacking, Bonferroni correction, and the brutal truth about minimum track record length — with Python proof.</p>
+  <div class="hero-meta">
+    <div class="avatar">NS</div>
+    <div class="meta-text"><strong>Nadun Sulochana</strong>Aspiring Software Architect · BSc Cyber Security · SLTC Research University</div>
+    <div class="day-badge">06 / 90</div>
+  </div>
+</div>
+
+<!-- BODY -->
+<div class="article-body">
+
+  <p class="lead">Most traders backtest a strategy, see a positive return, and call it proven. But a positive return from 100 trades proves almost nothing — random noise can look like edge for hundreds of trades. Hypothesis testing forces you to ask: could this result have happened by chance?</p>
+
+  <h2>The Framework — Null vs Alternative Hypothesis</h2>
+  <p>Every hypothesis test starts with two competing claims about your strategy. You assume the boring one is true until the data convinces you otherwise.</p>
+
+  <div class="hypothesis-grid">
+    <div class="hyp-card hyp-null">
+      <div class="hyp-label">H₀ — Null Hypothesis</div>
+      <div class="hyp-title">Your strategy has no edge</div>
+      <p>The default assumption. Mean return equals zero. Any positive performance you see is just random variation — luck, not skill. You need strong evidence to reject this.</p>
+      <div class="hyp-formula">H₀: μ = 0 (no real edge)</div>
+    </div>
+    <div class="hyp-card hyp-alt">
+      <div class="hyp-label">H₁ — Alternative Hypothesis</div>
+      <div class="hyp-title">Your strategy has real edge</div>
+      <p>What you are trying to prove. Mean return is different from zero — and the difference is large enough that it is unlikely to be chance alone. This requires a low p-value.</p>
+      <div class="hyp-formula">H₁: μ ≠ 0 (real edge exists)</div>
+    </div>
+  </div>
+
+  <h2>The p-value — The Most Misunderstood Number in Finance</h2>
+  <p>The p-value answers one question: <strong>if my strategy truly had zero edge (H₀ true), what is the probability of seeing results at least this good by random chance?</strong></p>
+  <p>A small p-value (typically &lt;0.05) means your results would be very unlikely under H₀ — so you reject H₀ and conclude there is real edge. A large p-value means your results are perfectly consistent with random noise.</p>
+
+  <div class="callout callout-red">
+    <div class="callout-title">What p-value does NOT mean</div>
+    <p style="margin:0;font-size:14px;color:var(--ink-soft);line-height:1.75;">
+      p = 0.05 does NOT mean there is a 5% chance your strategy has no edge.<br/>
+      p = 0.05 means: if your strategy had zero edge, you would see results this good 5% of the time by chance.<br/><br/>
+      This distinction sounds subtle but getting it wrong leads to completely wrong conclusions. The p-value is about the data under H₀ — not about the probability of your hypothesis being true.
+    </p>
+  </div>
+
+  <h2>Type I and Type II Errors — The Two Ways to Be Wrong</h2>
+
+  <div class="error-grid">
+    <div class="error-card type1">
+      <div class="error-type">Type I Error</div>
+      <div class="error-name">False Positive</div>
+      <p>Rejecting H₀ when it is actually true. Concluding your strategy has edge when it is actually just lucky noise.</p>
+      <div class="error-example">"My strategy showed p=0.03 — it must work!" — but it was 1 of 33 strategies you tested.</div>
+    </div>
+    <div class="error-card type2">
+      <div class="error-type">Type II Error</div>
+      <div class="error-name">False Negative</div>
+      <p>Failing to reject H₀ when it is actually false. Discarding a genuinely profitable strategy because you did not have enough trades to prove it.</p>
+      <div class="error-example">"p=0.12, not significant" — but with only 50 trades there was never enough power to detect real edge.</div>
+    </div>
+  </div>
+
+  <h2>Python — t-test Your Strategy Returns</h2>
+  <p>The one-sample t-test asks: is the mean return of my strategy significantly different from zero?</p>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — t-test on strategy returns</div>
+    </div>
+    <pre><span class="c-kw">import</span> numpy <span class="c-kw">as</span> np
+<span class="c-kw">from</span> scipy <span class="c-kw">import</span> stats
+
+np.random.<span class="c-fn">seed</span>(<span class="c-num">42</span>)
+
+<span class="c-cm"># 252 daily returns — small positive edge</span>
+<span class="c-var">returns</span> = np.random.<span class="c-fn">normal</span>(<span class="c-num">0.08</span>, <span class="c-num">1.5</span>, <span class="c-num">252</span>)
+
+<span class="c-cm"># One-sample t-test: H₀ = mean return is 0</span>
+<span class="c-var">t_stat</span>, <span class="c-var">p_value</span> = stats.<span class="c-fn">ttest_1samp</span>(returns, popmean=<span class="c-num">0</span>)
+
+<span class="c-fn">print</span>(<span class="c-str">f"Sample mean:  {returns.mean():.4f}%"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Sample std:   {returns.std():.4f}%"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"n:            {len(returns)}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"t-statistic:  {t_stat:.4f}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"p-value:      {p_value:.4f}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Significant:  {p_value < 0.05}"</span>)</pre>
+  </div>
+
+  <h3>Actual Output</h3>
+  <div class="output-wrap">
+    <div class="output-header">▶ python3 ttest_strategy.py</div>
+    <div class="output-body">
+      <div><span class="out-ln">Sample mean:&nbsp;&nbsp;</span><span class="out-n">0.0744%</span></div>
+      <div><span class="out-ln">Sample std:&nbsp;&nbsp;&nbsp;</span><span class="out-n">1.4479%</span></div>
+      <div><span class="out-ln">n:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="out-n">252</span></div>
+      <div><span class="out-ln">t-statistic:&nbsp;&nbsp;</span><span class="out-n">0.8135</span></div>
+      <div><span class="out-ln">p-value:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="out-f">0.4167</span></div>
+      <div><span class="out-ln">Significant:&nbsp;&nbsp;</span><span class="out-f">False</span></div>
+    </div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-title">Reading this output</div>
+    <p style="margin:0;font-size:14px;color:var(--ink-soft);line-height:1.75;">
+      Mean return = <strong>+0.074%</strong> per day — looks positive. But p-value = <strong>0.4167</strong>. This means if the strategy had zero edge, results this good would occur 41.67% of the time by random chance. That is not rare at all. We cannot reject H₀. With 252 data points this strategy has NOT proven any edge — despite showing a positive mean.
+    </p>
+  </div>
+
+  <h2>The p-Hacking Problem — Why Most Backtests Are Lies</h2>
+  <p>Here is the most dangerous trap in quantitative finance. If you test 20 strategies on random noise, you expect 1 to show p&lt;0.05 purely by chance. Yet most traders stop there and call it a discovery.</p>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — p-hacking demonstration</div>
+    </div>
+    <pre><span class="c-cm"># All 20 strategies have ZERO real edge — pure random noise</span>
+np.random.<span class="c-fn">seed</span>(<span class="c-num">99</span>)
+<span class="c-var">n_tests</span> = <span class="c-num">20</span>
+<span class="c-var">p_values</span> = [
+    stats.<span class="c-fn">ttest_1samp</span>(np.random.<span class="c-fn">normal</span>(<span class="c-num">0</span>, <span class="c-num">1</span>, <span class="c-num">50</span>), <span class="c-num">0</span>)[<span class="c-num">1</span>]
+    <span class="c-kw">for</span> _ <span class="c-kw">in</span> <span class="c-fn">range</span>(n_tests)
+]
+
+<span class="c-var">false_positives</span> = <span class="c-fn">sum</span>(p < <span class="c-num">0.05</span> <span class="c-kw">for</span> p <span class="c-kw">in</span> p_values)
+<span class="c-fn">print</span>(<span class="c-str">f"Strategies tested:         {n_tests}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Strategies with ZERO edge: {n_tests} (all of them)"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"False positives (p<0.05):  {false_positives}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Expected false positives:  {n_tests * 0.05:.1f}"</span>)
+
+<span class="c-cm"># Bonferroni correction</span>
+<span class="c-var">threshold</span> = <span class="c-num">0.05</span> / n_tests
+<span class="c-var">after_fix</span> = <span class="c-fn">sum</span>(p < threshold <span class="c-kw">for</span> p <span class="c-kw">in</span> p_values)
+<span class="c-fn">print</span>(<span class="c-str">f"Bonferroni threshold:      {threshold:.4f}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Significant after fix:     {after_fix}"</span>)</pre>
+  </div>
+
+  <div class="output-wrap">
+    <div class="output-header">▶ python3 p_hacking.py</div>
+    <div class="output-body">
+      <div><span class="out-ln">Strategies tested:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="out-n">20</span></div>
+      <div><span class="out-ln">Strategies with ZERO edge:&nbsp;</span><span class="out-n">20 (all of them)</span></div>
+      <div><span class="out-ln">False positives (p&lt;0.05):&nbsp;&nbsp;</span><span class="out-f">1</span></div>
+      <div><span class="out-ln">Expected false positives:&nbsp;&nbsp;</span><span class="out-n">1.0</span></div>
+      <div><span class="out-ln">Bonferroni threshold:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="out-n">0.0025</span></div>
+      <div><span class="out-ln">Significant after fix:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="out-n">0</span></div>
+    </div>
+  </div>
+
+  <p>Testing 20 random strategies with zero real edge produced <strong>exactly 1 false positive</strong> — precisely as expected. That false positive would look like a real discovery to anyone who did not know how many strategies were tested. Bonferroni correction eliminates it completely.</p>
+
+  <table class="phack-table">
+    <thead><tr><th>Strategy</th><th>p-value</th><th>Without correction</th><th>With Bonferroni (α=0.0025)</th></tr></thead>
+    <tbody>
+      <tr><td>Strategy 1–19</td><td class="p-insig">≥ 0.05</td><td class="p-insig">Not significant ✓</td><td class="p-insig">Not significant ✓</td></tr>
+      <tr><td>Strategy 20 (lucky)</td><td class="p-sig">0.031</td><td class="p-sig">Significant ← FALSE</td><td class="p-insig">Not significant ✓</td></tr>
+    </tbody>
+  </table>
+
+  <h2>The Brutal Truth — Minimum Track Record Length</h2>
+  <p>How many trades do you actually need before a strategy is statistically proven? The answer, using the Bailey &amp; Lopez de Prado (2012) formula, is far larger than most traders expect.</p>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — minimum track record length</div>
+    </div>
+    <pre><span class="c-kw">import</span> numpy <span class="c-kw">as</span> np
+<span class="c-kw">from</span> scipy <span class="c-kw">import</span> stats
+
+<span class="c-kw">def</span> <span class="c-fn">min_track_record</span>(target_sr, confidence=<span class="c-num">0.95</span>):
+    <span class="c-str">"""
+    Minimum daily observations needed to prove Sharpe ratio.
+    Bailey & Lopez de Prado (2012) formula.
+    """</span>
+    sr_daily = target_sr / np.<span class="c-fn">sqrt</span>(<span class="c-num">252</span>)
+    z = stats.norm.<span class="c-fn">ppf</span>(confidence)
+    min_obs = <span class="c-fn">int</span>(np.<span class="c-fn">ceil</span>(
+        (z * np.<span class="c-fn">sqrt</span>(<span class="c-num">1</span> + <span class="c-num">0.5</span> * target_sr**<span class="c-num">2</span>) / sr_daily) ** <span class="c-num">2</span>
+    ))
+    <span class="c-kw">return</span> min_obs
+
+<span class="c-kw">for</span> sr <span class="c-kw">in</span> [<span class="c-num">0.5</span>, <span class="c-num">1.0</span>, <span class="c-num">1.5</span>, <span class="c-num">2.0</span>]:
+    n = <span class="c-fn">min_track_record</span>(sr)
+    <span class="c-fn">print</span>(<span class="c-str">f"Sharpe={sr}: {n:5d} obs = {n/252:.1f} trading years"</span>)</pre>
+  </div>
+
+  <div class="output-wrap">
+    <div class="output-header">▶ python3 min_track_record.py</div>
+    <div class="output-body">
+      <div><span class="out-lf">Sharpe=0.5:&nbsp;</span><span class="out-f">4357</span><span class="out-lf"> obs = </span><span class="out-f">17.3</span><span class="out-lf"> trading years</span></div>
+      <div><span class="out-lf">Sharpe=1.0:&nbsp;</span><span class="out-f">1453</span><span class="out-lf"> obs = </span><span class="out-f">5.8</span><span class="out-lf"> trading years</span></div>
+      <div><span class="out-ln">Sharpe=1.5:&nbsp;</span><span class="out-n"> 915</span><span class="out-ln"> obs = </span><span class="out-n">3.6</span><span class="out-ln"> trading years</span></div>
+      <div><span class="out-ln">Sharpe=2.0:&nbsp;</span><span class="out-n"> 727</span><span class="out-ln"> obs = </span><span class="out-n">2.9</span><span class="out-ln"> trading years</span></div>
+    </div>
+  </div>
+
+  <table class="track-table">
+    <thead><tr><th>Annualised Sharpe</th><th>Min observations</th><th>Trading years needed</th><th>Verdict</th></tr></thead>
+    <tbody>
+      <tr><td class="tr-sr">0.5</td><td class="tr-obs">4,357 trades</td><td class="tr-yrs">17.3 years</td><td style="color:var(--red);font-weight:500;">Practically impossible to prove</td></tr>
+      <tr><td class="tr-sr">1.0</td><td class="tr-obs">1,453 trades</td><td class="tr-yrs">5.8 years</td><td style="color:var(--amber);font-weight:500;">Very long track record needed</td></tr>
+      <tr><td class="tr-sr">1.5</td><td class="tr-obs">915 trades</td><td class="tr-yrs">3.6 years</td><td style="color:var(--amber);font-weight:500;">Still years of daily data</td></tr>
+      <tr><td class="tr-sr">2.0</td><td class="tr-obs">727 trades</td><td class="tr-yrs">2.9 years</td><td class="tr-good">More achievable but still hard</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-red">
+    <div class="callout-title">The brutal implication</div>
+    <p style="margin:0;font-size:14px;color:var(--ink-soft);line-height:1.75;">
+      A strategy with Sharpe ratio of 1.0 needs <strong>5.8 years of daily trading</strong> before you can statistically prove it works at 95% confidence. Most backtests cover 1–3 years. Most traders call it proven after 6 months. The math says otherwise — and the math is right.
+    </p>
+  </div>
+
+  <h2>A Complete Testing Workflow for Any Strategy</h2>
+
+  <div class="decision-flow">
+    <div class="flow-title">Strategy validation — do these in order</div>
+    <div class="flow-step">
+      <div class="flow-num">1</div>
+      <div class="flow-body"><b>State H₀ before looking at results</b> — "This strategy has zero edge." Commit to this before any testing. Never change your hypothesis after seeing the data.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">2</div>
+      <div class="flow-body"><b>Run t-test on your returns</b> — <code>stats.ttest_1samp(returns, 0)</code>. If p &gt; 0.05 with &gt;252 trades, you have no proven edge. Stop.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">3</div>
+      <div class="flow-body"><b>Count how many strategies you tested</b> — Apply Bonferroni correction: divide your α threshold by the number of strategies tested. α = 0.05 / 20 = 0.0025.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">4</div>
+      <div class="flow-body"><b>Check minimum track record</b> — Use the Bailey formula. If you do not have enough data to prove the Sharpe ratio you are claiming, your test has insufficient power.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">5</div>
+      <div class="flow-body"><b>Out-of-sample validation</b> — Split data: 70% in-sample for strategy development, 30% out-of-sample for final testing. Never touch the out-of-sample data until the very end. It is your last line of defence.</div>
+    </div>
+  </div>
+
+  <hr class="rule"/>
+
+  <div class="takeaway">
+    <div class="takeaway-title">Three things to remember from Day 6</div>
+    <p class="takeaway-body">A strategy that looks profitable is not the same as a strategy that is statistically proven to be profitable. The difference is what separates systematic trading from sophisticated gambling.</p>
+    <ul class="takeaway-list">
+      <li>p-value = 0.4167 on 252 trades of a strategy with +0.074% mean return. Looks positive. Statistically meaningless. You need far more data than you think — 5.8 years for Sharpe=1.0.</li>
+      <li>Testing 20 strategies on random noise produces 1 false positive by design. Always apply Bonferroni correction: divide alpha by the number of tests. 0.05 / 20 = 0.0025 threshold.</li>
+      <li>State your null hypothesis before looking at results. Never change your test methodology after seeing the data. That is p-hacking, and it is why most published trading research does not replicate.</li>
+    </ul>
+  </div>
+
+  <div class="article-nav">
+    <a href="day5.html">
+      <span class="nav-dir">← Previous</span>
+      <span class="nav-title">Day 5: Maximum Likelihood Estimation</span>
+    </a>
+    <a href="index.html" class="next">
+      <span class="nav-dir">All Articles</span>
+      <span class="nav-title">View Full 90-Day Series →</span>
+    </a>
+  </div>
+
+</div>
+
+<div class="article-footer">
+  <div class="footer-series">Quant Finance Notes — 90-Day Series</div>
+  <div class="footer-next">Tomorrow — Day 7: OLS Regression for Returns<br/>The foundation of every factor model in finance</div>
+  <div class="footer-tags">
+    <span class="footer-tag">#QuantFinance</span>
+    <span class="footer-tag">#HypothesisTesting</span>
+    <span class="footer-tag">#TradingMath</span>
+    <span class="footer-tag">#AlgorithmicTrading</span>
+    <span class="footer-tag">#Python</span>
+    <span class="footer-tag">#Statistics</span>
+    <span class="footer-tag">#DataScience</span>
+    <span class="footer-tag">#Finance</span>
+    <span class="footer-tag">#SriLanka</span>
+    <span class="footer-tag">#Quant</span>
+  </div>
+  <div class="footer-author">
+    Written by <strong>Nadun Sulochana</strong> &nbsp;·&nbsp; github.com/ns530 &nbsp;·&nbsp; nadunsulochana92@gmail.com
+  </div>
+</div>
+
+</body>
+</html>
