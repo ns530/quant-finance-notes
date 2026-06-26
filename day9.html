@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="google-site-verification" content="SgzPqB0Vckpfji6y3nNSuKVuLHeB-5xwqyW2BR0Zr9g">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Day 9: Stationarity & ADF Test — before any time series model, check this first. ADF test, KPSS test, random walk vs stationary returns with Python.">
+<meta name="keywords" content="stationarity finance, ADF test trading, unit root test, KPSS test, random walk price series, log returns stationary, time series finance Python, Nadun Sulochana">
+<meta name="author" content="Nadun Sulochana">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://ns530.github.io/quant-finance-notes/day9.html">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ns530.github.io/quant-finance-notes/day9.html">
+<meta property="og:title" content="Day 9: Stationarity & ADF Test — Quant Finance Notes | Nadun Sulochana">
+<meta property="og:description" content="Before any time series model — check stationarity. ADF on prices p=0.38 (not stationary) vs log returns p=0.000 (stationary). Python proof.">
+<meta property="og:site_name" content="Quant Finance Notes">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="citation_author" content="Nadun Sulochana">
+<meta name="geo.region" content="LK">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "name": "Day 9: Stationarity & ADF Test",
+  "url": "https://ns530.github.io/quant-finance-notes/day9.html",
+  "author": {"@type":"Person","name":"Nadun Sulochana","url":"https://www.linkedin.com/in/nadun-sulochana-41923029b","sameAs":["https://github.com/ns530"]},
+  "isPartOf": {"@type":"WebSite","name":"Quant Finance Notes","url":"https://ns530.github.io/quant-finance-notes/"}
+}
+</script>
+<title>Day 9: Stationarity & ADF Test — Quant Finance Notes | Nadun Sulochana</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.stat-compare{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:28px 0;}
+@media(max-width:540px){.stat-compare{grid-template-columns:1fr;}}
+.sc-card{border-radius:10px;padding:22px;border:1px solid var(--rule);}
+.sc-bad{background:var(--red-lt);border-color:#E4B8B8;}
+.sc-good{background:var(--green-lt);border-color:#B8E4C4;}
+.sc-label{font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:8px;}
+.sc-bad .sc-label{color:var(--red);}
+.sc-good .sc-label{color:var(--green);}
+.sc-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;margin-bottom:10px;color:var(--ink);}
+.sc-card p{font-size:13px;color:var(--ink-soft);line-height:1.65;margin:0;}
+.sc-stat{font-family:'Source Code Pro',monospace;font-size:12px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,0.08);line-height:1.9;}
+.sc-bad .sc-stat{color:var(--red);}
+.sc-good .sc-stat{color:var(--green);}
+
+.adf-formula{background:var(--accent);border-radius:12px;padding:28px;margin:28px 0;text-align:center;}
+.adf-formula .f-label{font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:14px;}
+.adf-formula .f-main{font-family:'Playfair Display',serif;font-size:clamp(14px,2.5vw,21px);color:white;line-height:1.75;margin-bottom:10px;}
+.adf-formula .f-sub{font-size:13px;color:rgba(255,255,255,0.6);line-height:1.7;}
+
+.test-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:28px 0;}
+@media(max-width:520px){.test-grid{grid-template-columns:1fr;}}
+.tg-card{border-radius:10px;padding:20px;border:1px solid var(--rule);}
+.tg-adf{background:var(--accent-lt);border-color:#B8CCE4;}
+.tg-kpss{background:var(--purple-lt);border-color:#C4B8E4;}
+.tg-title{font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;}
+.tg-adf .tg-title{color:var(--accent-mid);}
+.tg-kpss .tg-title{color:var(--purple);}
+.tg-card p{font-size:13px;color:var(--ink-soft);line-height:1.65;margin:0;}
+.tg-rule{font-family:'Source Code Pro',monospace;font-size:12px;margin-top:10px;padding:8px 10px;background:rgba(0,0,0,0.05);border-radius:5px;}
+
+.decision-table{width:100%;border-collapse:collapse;margin:20px 0;font-size:13.5px;}
+.decision-table th{text-align:center;padding:10px 14px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);border-bottom:2px solid var(--rule);}
+.decision-table td{padding:12px 14px;border-bottom:1px solid var(--cream-dark);text-align:center;}
+.decision-table tr:last-child td{border-bottom:none;}
+.d-green{color:var(--green);font-weight:600;}
+.d-red{color:var(--red);font-weight:600;}
+.d-amber{color:var(--amber);font-weight:600;}
+.d-stat{color:var(--ink-soft);}
+
+.wf-item{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--cream-dark);align-items:flex-start;}
+.wf-item:last-child{border-bottom:none;}
+.wf-num{width:30px;height:30px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;margin-top:2px;}
+.wf-body{flex:1;font-size:13px;color:var(--ink-soft);line-height:1.65;}
+.wf-body b{color:var(--ink);}
+.wf-body code{font-family:'Source Code Pro',monospace;background:var(--cream-dark);padding:2px 6px;border-radius:3px;font-size:12px;}
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <a class="nav-brand" href="index.html">Quant Finance <span>Notes</span></a>
+  <div class="nav-links">
+    <a href="index.html">All Articles</a>
+    <a href="https://github.com/ns530" target="_blank">GitHub</a>
+    <a href="https://www.linkedin.com/in/nadun-sulochana-41923029b" target="_blank">LinkedIn</a>
+    <span class="nav-badge">Day 9 / 90</span>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="series-tag">Quant Finance Notes &nbsp;·&nbsp; Day 9 of 90</div>
+  <h1>Before Any Time Series Model — <em>Check This First</em></h1>
+  <p class="hero-sub">Stationarity is the first assumption every time series model makes. Violate it and your ARIMA, GARCH, and regression results are meaningless. The ADF test tells you if your series is safe to model — with Python proof.</p>
+  <div class="hero-meta">
+    <div class="avatar">NS</div>
+    <div class="meta-text"><strong>Nadun Sulochana</strong>Aspiring Software Architect · BSc Cyber Security · SLTC Research University</div>
+    <div class="day-badge">09 / 90</div>
+  </div>
+</div>
+
+<div class="article-body">
+
+  <p class="lead">A stationary time series has a constant mean, constant variance, and autocorrelation that does not change over time. Stock prices are not stationary. Log returns almost always are. This single distinction determines whether your entire time series analysis is valid — or garbage.</p>
+
+  <h2>Stationary vs Non-Stationary — The Core Difference</h2>
+
+  <div class="stat-compare">
+    <div class="sc-card sc-bad">
+      <div class="sc-label">Non-Stationary</div>
+      <div class="sc-title">Stock Prices / Random Walk</div>
+      <p>Mean and variance drift over time. No fixed level the series returns to. Statistics from one period don't apply to another. Models on non-stationary data produce spurious results.</p>
+      <div class="sc-stat">
+        Mean first half:  −7.3324<br/>
+        Mean second half: −5.8460 ← different!<br/>
+        Std first half:   4.5646<br/>
+        Std second half:  4.5056
+      </div>
+    </div>
+    <div class="sc-card sc-good">
+      <div class="sc-label">Stationary</div>
+      <div class="sc-title">Log Returns</div>
+      <p>Mean and variance roughly constant over time. Series fluctuates around a fixed level. Statistics from one window apply to another. Time series models work correctly here.</p>
+      <div class="sc-stat">
+        Mean first half:  +0.0723<br/>
+        Mean second half: −0.0218 ← similar ✓<br/>
+        Std first half:   0.8990<br/>
+        Std second half:  1.0907 ← similar ✓
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-red">
+    <div class="callout-title">Why non-stationarity breaks your models</div>
+    <p style="margin:0;font-size:14px;color:var(--ink-soft);line-height:1.75;">
+      Running regression on two non-stationary price series almost always finds a significant relationship — even if the series are completely unrelated. This is <strong>spurious regression</strong>. t-stats look great, R² is high, but the relationship is pure coincidence. This is one of the most common errors in financial research.
+    </p>
+  </div>
+
+  <h2>The ADF Test — Augmented Dickey-Fuller</h2>
+  <p>The ADF test formally tests for a <strong>unit root</strong> — the technical term for a random walk / non-stationary series.</p>
+
+  <div class="adf-formula">
+    <div class="f-label">ADF Test Hypotheses</div>
+    <div class="f-main">
+      H₀: The series has a unit root (non-stationary)<br/>
+      H₁: The series has no unit root (stationary)
+    </div>
+    <div class="f-sub">
+      ADF statistic more negative → stronger evidence against H₀<br/>
+      p-value &lt; 0.05 → reject H₀ → series IS stationary ✓<br/>
+      p-value &gt; 0.05 → fail to reject H₀ → series is NON-stationary ✗<br/><br/>
+      Critical values (n≈252): −3.46 (1%), −2.87 (5%), −2.57 (10%)<br/>
+      ADF statistic must be MORE NEGATIVE than critical value to reject H₀
+    </div>
+  </div>
+
+  <h2>Python — ADF Test on Prices vs Returns</h2>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — ADF test</div>
+    </div>
+    <pre><span class="c-kw">import</span> numpy <span class="c-kw">as</span> np
+<span class="c-kw">from</span> statsmodels.tsa.stattools <span class="c-kw">import</span> adfuller
+
+np.random.<span class="c-fn">seed</span>(<span class="c-num">42</span>)
+n = <span class="c-num">252</span>
+
+<span class="c-cm"># Non-stationary — random walk (price-like)</span>
+<span class="c-var">random_walk</span> = np.<span class="c-fn">cumsum</span>(np.random.<span class="c-fn">normal</span>(<span class="c-num">0</span>, <span class="c-num">1</span>, n))
+
+<span class="c-cm"># Stationary — log returns</span>
+<span class="c-var">log_returns</span> = np.random.<span class="c-fn">normal</span>(<span class="c-num">0</span>, <span class="c-num">1</span>, n)
+
+<span class="c-kw">def</span> <span class="c-fn">run_adf</span>(series, name):
+    r = <span class="c-fn">adfuller</span>(series, autolag=<span class="c-str">'AIC'</span>)
+    <span class="c-fn">print</span>(<span class="c-str">f"=== {name} ==="</span>)
+    <span class="c-fn">print</span>(<span class="c-str">f"ADF Statistic: {r[0]:.4f}"</span>)
+    <span class="c-fn">print</span>(<span class="c-str">f"p-value:       {r[1]:.4f}"</span>)
+    <span class="c-fn">print</span>(<span class="c-str">f"Critical 1%:   {r[4]['1%']:.4f}"</span>)
+    <span class="c-fn">print</span>(<span class="c-str">f"Critical 5%:   {r[4]['5%']:.4f}"</span>)
+    <span class="c-fn">print</span>(<span class="c-str">f"Stationary:    {r[1] < 0.05}"</span>)
+
+<span class="c-fn">run_adf</span>(random_walk, <span class="c-str">"Random Walk (Price-like)"</span>)
+<span class="c-fn">run_adf</span>(log_returns,  <span class="c-str">"Log Returns"</span>)</pre>
+  </div>
+
+  <h3>Actual Output</h3>
+  <div class="output-wrap">
+    <div class="output-header">▶ python3 adf_test.py</div>
+    <div class="output-body">
+      <div><span class="out-ln">=== Random Walk (Price-like) ===</span></div>
+      <div><span class="out-ln">ADF Statistic: </span><span class="out-f">-1.8038</span></div>
+      <div><span class="out-ln">p-value:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="out-f">0.3786</span><span class="out-lf">  ← p &gt; 0.05 → NOT stationary</span></div>
+      <div><span class="out-ln">Critical 1%:&nbsp;&nbsp;&nbsp;</span><span class="out-n">-3.4567</span></div>
+      <div><span class="out-ln">Critical 5%:&nbsp;&nbsp;&nbsp;</span><span class="out-n">-2.8731</span></div>
+      <div><span class="out-ln">Stationary:&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="out-f">False</span></div>
+      <div style="margin-top:8px;"></div>
+      <div><span class="out-ln">=== Log Returns ===</span></div>
+      <div><span class="out-ln">ADF Statistic: </span><span class="out-n">-15.5353</span><span class="out-ln">  ← very negative = strong evidence</span></div>
+      <div><span class="out-ln">p-value:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="out-n">0.0000</span><span class="out-ln">  ← p &lt; 0.05 → stationary ✓</span></div>
+      <div><span class="out-ln">Critical 5%:&nbsp;&nbsp;&nbsp;</span><span class="out-n">-2.8731</span></div>
+      <div><span class="out-ln">Stationary:&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="out-n">True</span></div>
+    </div>
+  </div>
+
+  <div class="callout callout-green">
+    <div class="callout-title">Reading these results</div>
+    <p style="margin:0;font-size:14px;color:var(--ink-soft);line-height:1.75;">
+      <strong>Random walk:</strong> ADF=−1.80, p=0.3786. p &gt; 0.05 → cannot reject H₀ → non-stationary. Do not model directly.<br/><br/>
+      <strong>Log returns:</strong> ADF=−15.54, p=0.0000. Extremely significant — far below the 5% critical value of −2.87. Strongly stationary. Safe to model.
+    </p>
+  </div>
+
+  <h2>ADF + KPSS — Use Both Together</h2>
+
+  <div class="test-grid">
+    <div class="tg-card tg-adf">
+      <div class="tg-title">ADF Test</div>
+      <p><strong>H₀ = non-stationary</strong><br/>Reject H₀ if p &lt; 0.05<br/>Low p → stationary evidence</p>
+      <div class="tg-rule">p &lt; 0.05 → Stationary ✓</div>
+    </div>
+    <div class="tg-card tg-kpss">
+      <div class="tg-title">KPSS Test</div>
+      <p><strong>H₀ = stationary</strong><br/>Reject H₀ if p &lt; 0.05<br/>High p → stationary evidence</p>
+      <div class="tg-rule">p &gt; 0.05 → Stationary ✓</div>
+    </div>
+  </div>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — ADF + KPSS combined check</div>
+    </div>
+    <pre><span class="c-kw">from</span> statsmodels.tsa.stattools <span class="c-kw">import</span> adfuller, kpss
+<span class="c-kw">import</span> warnings
+warnings.<span class="c-fn">filterwarnings</span>(<span class="c-str">'ignore'</span>)
+
+<span class="c-kw">def</span> <span class="c-fn">stationarity_check</span>(series, name):
+    adf   = <span class="c-fn">adfuller</span>(series, autolag=<span class="c-str">'AIC'</span>)
+    kpss_r = <span class="c-fn">kpss</span>(series, regression=<span class="c-str">'c'</span>, nlags=<span class="c-str">'auto'</span>)
+    adf_ok  = adf[<span class="c-num">1</span>]   < <span class="c-num">0.05</span>   <span class="c-cm"># True = stationary</span>
+    kpss_ok = kpss_r[<span class="c-num">1</span>] > <span class="c-num">0.05</span>   <span class="c-cm"># True = stationary</span>
+    verdict = <span class="c-str">"STATIONARY ✓"</span> <span class="c-kw">if</span> adf_ok <span class="c-kw">and</span> kpss_ok <span class="c-kw">else</span> <span class="c-str">"NON-STATIONARY ✗"</span>
+    <span class="c-fn">print</span>(<span class="c-str">f"{name}:"</span>)
+    <span class="c-fn">print</span>(<span class="c-str">f"  ADF  p={adf[1]:.4f}  ({'stationary' if adf_ok else 'not stationary'})"</span>)
+    <span class="c-fn">print</span>(<span class="c-str">f"  KPSS p={kpss_r[1]:.4f}  ({'stationary' if kpss_ok else 'not stationary'})"</span>)
+    <span class="c-fn">print</span>(<span class="c-str">f"  Verdict: {verdict}"</span>)
+
+<span class="c-fn">stationarity_check</span>(random_walk, <span class="c-str">"Random Walk"</span>)
+<span class="c-fn">stationarity_check</span>(log_returns,  <span class="c-str">"Log Returns"</span>)</pre>
+  </div>
+
+  <div class="output-wrap">
+    <div class="output-header">▶ python3 stationarity_check.py</div>
+    <div class="output-body">
+      <div><span class="out-ln">Random Walk:</span></div>
+      <div><span class="out-ln">&nbsp;&nbsp;ADF&nbsp;&nbsp;p=</span><span class="out-f">0.3786</span><span class="out-lf">  (not stationary)</span></div>
+      <div><span class="out-ln">&nbsp;&nbsp;KPSS p=</span><span class="out-f">0.0314</span><span class="out-lf">  (not stationary)</span></div>
+      <div><span class="out-lf">&nbsp;&nbsp;Verdict: NON-STATIONARY ✗</span></div>
+      <div style="margin-top:8px;"></div>
+      <div><span class="out-ln">Log Returns:</span></div>
+      <div><span class="out-ln">&nbsp;&nbsp;ADF&nbsp;&nbsp;p=</span><span class="out-n">0.0000</span><span class="out-ln">  (stationary)</span></div>
+      <div><span class="out-ln">&nbsp;&nbsp;KPSS p=</span><span class="out-n">0.1000</span><span class="out-ln">  (stationary)</span></div>
+      <div><span class="out-n">&nbsp;&nbsp;Verdict: STATIONARY ✓</span></div>
+    </div>
+  </div>
+
+  <h2>The Fix — One Line of Python</h2>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — transform prices to stationary returns</div>
+    </div>
+    <pre><span class="c-kw">import</span> numpy <span class="c-kw">as</span> np
+
+<span class="c-cm"># Simulate realistic stock prices</span>
+<span class="c-var">prices</span> = <span class="c-num">100</span> * np.<span class="c-fn">exp</span>(
+    np.<span class="c-fn">cumsum</span>(np.random.<span class="c-fn">normal</span>(<span class="c-num">0.0004</span>, <span class="c-num">0.01</span>, <span class="c-num">252</span>))
+)
+
+<span class="c-cm"># One line fix — log returns (first difference of log prices)</span>
+<span class="c-var">log_returns</span> = np.<span class="c-fn">diff</span>(np.<span class="c-fn">log</span>(prices))
+
+<span class="c-var">adf_p</span> = <span class="c-fn">adfuller</span>(prices,      autolag=<span class="c-str">'AIC'</span>)[<span class="c-num">1</span>]
+<span class="c-var">adf_r</span> = <span class="c-fn">adfuller</span>(log_returns, autolag=<span class="c-str">'AIC'</span>)[<span class="c-num">1</span>]
+
+<span class="c-fn">print</span>(<span class="c-str">f"Prices p-value:      {adf_p:.4f}  → {'stationary' if adf_p<0.05 else 'NOT stationary'}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Log returns p-value: {adf_r:.6f}  → {'stationary' if adf_r<0.05 else 'NOT stationary'}"</span>)</pre>
+  </div>
+
+  <div class="output-wrap">
+    <div class="output-header">▶ python3 prices_vs_returns.py</div>
+    <div class="output-body">
+      <div><span class="out-ln">Prices p-value:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="out-f">0.1578</span><span class="out-lf">  → NOT stationary</span></div>
+      <div><span class="out-ln">Log returns p-value:&nbsp;</span><span class="out-n">0.000000</span><span class="out-ln">  → stationary ✓</span></div>
+    </div>
+  </div>
+
+  <h2>Decision Table — ADF + KPSS Interpretation</h2>
+
+  <table class="decision-table">
+    <thead><tr><th>ADF result</th><th>KPSS result</th><th>Conclusion</th><th>What to do</th></tr></thead>
+    <tbody>
+      <tr><td class="d-green">p &lt; 0.05 ✓</td><td class="d-green">p &gt; 0.05 ✓</td><td class="d-green">Stationary</td><td class="d-stat">Model directly ✓</td></tr>
+      <tr><td class="d-red">p &gt; 0.05 ✗</td><td class="d-red">p &lt; 0.05 ✗</td><td class="d-red">Non-stationary</td><td class="d-stat">Apply np.diff(np.log(prices))</td></tr>
+      <tr><td class="d-green">p &lt; 0.05 ✓</td><td class="d-red">p &lt; 0.05 ✗</td><td class="d-amber">Trend-stationary</td><td class="d-stat">Detrend first</td></tr>
+      <tr><td class="d-red">p &gt; 0.05 ✗</td><td class="d-green">p &gt; 0.05 ✓</td><td class="d-amber">Ambiguous</td><td class="d-stat">Increase sample size, retest</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Your Workflow — Before Every Time Series Model</h2>
+
+  <div style="background:white;border:1px solid var(--rule);border-radius:12px;padding:24px 28px;margin:28px 0;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:18px;">Run this before ARIMA, GARCH, VAR, or any regression</div>
+    <div class="wf-item"><div class="wf-num">1</div><div class="wf-body"><b>Plot the series</b> — Does it drift upward? Does variance grow? Non-stationarity is usually visible before any test.</div></div>
+    <div class="wf-item"><div class="wf-num">2</div><div class="wf-body"><b>Run ADF test</b> — <code>adfuller(series, autolag='AIC')</code>. p &lt; 0.05 = stationary. Report ADF statistic AND critical values.</div></div>
+    <div class="wf-item"><div class="wf-num">3</div><div class="wf-body"><b>Run KPSS test</b> — <code>kpss(series, regression='c')</code>. p &gt; 0.05 = stationary. Cross-check with decision table above.</div></div>
+    <div class="wf-item"><div class="wf-num">4</div><div class="wf-body"><b>If non-stationary — fix it</b> — <code>np.diff(np.log(prices))</code> converts prices to log returns. Almost always achieves stationarity. Retest after.</div></div>
+    <div class="wf-item"><div class="wf-num">5</div><div class="wf-body"><b>Only then — build your model</b> — ARIMA, GARCH, VAR all require stationary inputs. This step is not optional, it is the foundation.</div></div>
+  </div>
+
+  <hr class="rule"/>
+
+  <div class="takeaway">
+    <div class="takeaway-title">Three things to remember from Day 9</div>
+    <p class="takeaway-body">Stationarity is not a technicality — it is the foundation every time series model stands on. Skip this check and every model result you produce is potentially meaningless.</p>
+    <ul class="takeaway-list">
+      <li>Stock prices are non-stationary (ADF p=0.38). Log returns are stationary (ADF p=0.000, t-stat=−15.54). Always model returns, never raw prices — this is not preference, it is mathematics.</li>
+      <li>Use ADF and KPSS together — they test opposite null hypotheses. ADF: H₀=non-stationary. KPSS: H₀=stationary. Agreement from both gives far stronger confidence than either alone.</li>
+      <li>The fix is one line: <code>np.diff(np.log(prices))</code>. Log returns are almost always stationary, interpretable as continuously compounded returns, and ready to model immediately.</li>
+    </ul>
+  </div>
+
+  <div class="article-nav">
+    <a href="day8.html">
+      <span class="nav-dir">← Previous</span>
+      <span class="nav-title">Day 8: Multiple Testing &amp; FDR</span>
+    </a>
+    <a href="index.html" class="next">
+      <span class="nav-dir">All Articles</span>
+      <span class="nav-title">View Full 90-Day Series →</span>
+    </a>
+  </div>
+
+</div>
+
+<div class="article-footer">
+  <div class="footer-series">Quant Finance Notes — 90-Day Series</div>
+  <div class="footer-next">Tomorrow — Day 10: ACF &amp; PACF<br/>How to detect autocorrelation in price and return data</div>
+  <div class="footer-tags">
+    <span class="footer-tag">#QuantFinance</span>
+    <span class="footer-tag">#Stationarity</span>
+    <span class="footer-tag">#ADFTest</span>
+    <span class="footer-tag">#TimeSeries</span>
+    <span class="footer-tag">#TradingMath</span>
+    <span class="footer-tag">#AlgorithmicTrading</span>
+    <span class="footer-tag">#Python</span>
+    <span class="footer-tag">#Statistics</span>
+    <span class="footer-tag">#Finance</span>
+    <span class="footer-tag">#SriLanka</span>
+  </div>
+  <div class="footer-author">
+    Written by <strong>Nadun Sulochana</strong> &nbsp;·&nbsp; github.com/ns530 &nbsp;·&nbsp; nadunsulochana92@gmail.com
+  </div>
+</div>
+
+</body>
+</html>
