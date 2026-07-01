@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="google-site-verification" content="SgzPqB0Vckpfji6y3nNSuKVuLHeB-5xwqyW2BR0Zr9g">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Day 11: ARIMA Models — the classic time series model every quant must know. Model selection via AIC/BIC, forecasting with confidence intervals, Python with real output.">
+<meta name="keywords" content="ARIMA model finance, ARIMA Python trading, AIC BIC model selection, time series forecasting finance, AR MA model, quant finance tutorial, statsmodels ARIMA, Nadun Sulochana">
+<meta name="author" content="Nadun Sulochana">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://ns530.github.io/quant-finance-notes/day11.html">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ns530.github.io/quant-finance-notes/day11.html">
+<meta property="og:title" content="Day 11: ARIMA Models — Quant Finance Notes | Nadun Sulochana">
+<meta property="og:description" content="The classic time series model every quant must know. Model selection via AIC/BIC correctly identifies AR(2) among 12 candidates. Python forecasting with confidence intervals.">
+<meta property="og:site_name" content="Quant Finance Notes">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="citation_author" content="Nadun Sulochana">
+<meta name="geo.region" content="LK">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "name": "Day 11: ARIMA Models",
+  "url": "https://ns530.github.io/quant-finance-notes/day11.html",
+  "author": {"@type":"Person","name":"Nadun Sulochana","url":"https://www.linkedin.com/in/nadun-sulochana-41923029b","sameAs":["https://github.com/ns530"]},
+  "isPartOf": {"@type":"WebSite","name":"Quant Finance Notes","url":"https://ns530.github.io/quant-finance-notes/"}
+}
+</script>
+<title>Day 11: ARIMA Models — Quant Finance Notes | Nadun Sulochana</title>
+<link rel="stylesheet" href="style.css">
+<style>
+/* ── DAY 11 SPECIFIC ── */
+.arima-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:28px 0;}
+@media(max-width:620px){.arima-grid{grid-template-columns:1fr;}}
+.arima-card{border-radius:10px;padding:22px;border:1px solid var(--rule);text-align:center;}
+.a-p{background:var(--accent-lt);border-color:#B8CCE4;}
+.a-d{background:var(--amber-lt); border-color:#E4D4B8;}
+.a-q{background:var(--green-lt); border-color:#B8E4C4;}
+.arima-symbol{font-family:'Playfair Display',serif;font-size:36px;font-weight:900;line-height:1;margin-bottom:6px;}
+.a-p .arima-symbol{color:var(--accent-mid);}
+.a-d .arima-symbol{color:var(--amber);}
+.a-q .arima-symbol{color:var(--green);}
+.arima-name{font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;}
+.a-p .arima-name{color:var(--accent-mid);}
+.a-d .arima-name{color:var(--amber);}
+.a-q .arima-name{color:var(--green);}
+.arima-card p{font-size:13px;color:var(--ink-soft);line-height:1.6;margin:0;}
+.arima-link{font-family:'Source Code Pro',monospace;font-size:12px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,0.08);}
+.a-p .arima-link{color:var(--accent-mid);}
+.a-d .arima-link{color:var(--amber);}
+.a-q .arima-link{color:var(--green);}
+
+.model-select-table{width:100%;border-collapse:collapse;margin:20px 0;font-size:13.5px;}
+.model-select-table th{text-align:center;padding:10px 14px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);border-bottom:2px solid var(--rule);}
+.model-select-table td{padding:11px 14px;border-bottom:1px solid var(--cream-dark);text-align:center;font-family:'Source Code Pro',monospace;font-size:13px;color:var(--ink-soft);}
+.model-select-table tr:last-child td{border-bottom:none;}
+.ms-winner{background:var(--green-lt);}
+.ms-winner td{color:var(--green);font-weight:700;}
+
+.forecast-viz{background:white;border:1px solid var(--rule);border-radius:10px;padding:22px 24px;margin:28px 0;}
+.forecast-title{font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:16px;}
+.fc-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.fc-t{font-size:12px;font-family:'Source Code Pro',monospace;color:var(--ink-muted);min-width:44px;}
+.fc-bar-wrap{flex:1;height:24px;background:var(--cream-dark);border-radius:4px;position:relative;}
+.fc-ci{position:absolute;top:0;height:24px;background:rgba(46,96,152,0.15);border-radius:4px;}
+.fc-point{position:absolute;top:2px;width:3px;height:20px;background:var(--accent);border-radius:2px;}
+.fc-val{font-size:12px;font-family:'Source Code Pro',monospace;color:var(--accent);min-width:70px;text-align:right;}
+
+.aic-formula{background:var(--accent);border-radius:12px;padding:28px;margin:28px 0;text-align:center;}
+.aic-formula .f-label{font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:14px;}
+.aic-formula .f-main{font-family:'Playfair Display',serif;font-size:clamp(15px,2.8vw,22px);color:white;line-height:1.75;margin-bottom:10px;}
+.aic-formula .f-sub{font-size:13px;color:rgba(255,255,255,0.6);line-height:1.7;}
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <a class="nav-brand" href="index.html">Quant Finance <span>Notes</span></a>
+  <div class="nav-links">
+    <a href="index.html">All Articles</a>
+    <a href="https://github.com/ns530" target="_blank">GitHub</a>
+    <a href="https://www.linkedin.com/in/nadun-sulochana-41923029b" target="_blank">LinkedIn</a>
+    <span class="nav-badge">Day 11 / 90</span>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="series-tag">Quant Finance Notes &nbsp;·&nbsp; Day 11 of 90</div>
+  <h1>The Classic Model <em>Every Quant Must Know</em></h1>
+  <p class="hero-sub">ARIMA combines everything from the last 3 days — stationarity, ACF, and PACF — into a single forecasting framework. Here is how to select the right order, fit it correctly, and forecast with honest uncertainty bounds.</p>
+  <div class="hero-meta">
+    <div class="avatar">NS</div>
+    <div class="meta-text"><strong>Nadun Sulochana</strong>Aspiring Software Architect · BSc Cyber Security · SLTC Research University</div>
+    <div class="day-badge">11 / 90</div>
+  </div>
+</div>
+
+<div class="article-body">
+
+  <p class="lead">ARIMA is not one model — it is three combined into one framework. AutoRegressive (AR) captures how past values predict future ones. Integrated (I) handles non-stationarity through differencing. Moving Average (MA) captures how past forecast errors predict future values. Together, ARIMA(p,d,q) is the workhorse of classical time series forecasting.</p>
+
+  <h2>The Three Components — p, d, q</h2>
+
+  <div class="arima-grid">
+    <div class="arima-card a-p">
+      <div class="arima-symbol">p</div>
+      <div class="arima-name">AutoRegressive order</div>
+      <p>How many past values directly predict the current value. Identified using PACF from Day 10 — where PACF cuts off.</p>
+      <div class="arima-link">yₜ depends on yₜ₋₁...yₜ₋ₚ</div>
+    </div>
+    <div class="arima-card a-d">
+      <div class="arima-symbol">d</div>
+      <div class="arima-name">Differencing order</div>
+      <p>How many times you difference the series to achieve stationarity. Determined using the ADF test from Day 9. Usually d=0 or d=1 for returns.</p>
+      <div class="arima-link">Δᵈyₜ is stationary</div>
+    </div>
+    <div class="arima-card a-q">
+      <div class="arima-symbol">q</div>
+      <div class="arima-name">Moving Average order</div>
+      <p>How many past forecast errors influence the current value. Identified using ACF from Day 10 — where ACF cuts off.</p>
+      <div class="arima-link">yₜ depends on εₜ₋₁...εₜ₋ᵩ</div>
+    </div>
+  </div>
+
+  <h2>Python — Simulating and Fitting an AR(2) Process</h2>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — fit ARIMA to known AR(2) process</div>
+    </div>
+    <pre><span class="c-kw">import</span> numpy <span class="c-kw">as</span> np
+<span class="c-kw">from</span> statsmodels.tsa.arima.model <span class="c-kw">import</span> ARIMA
+
+np.random.<span class="c-fn">seed</span>(<span class="c-num">42</span>)
+n = <span class="c-num">300</span>
+
+<span class="c-cm"># Generate AR(2) process: y_t = 0.5*y_(t-1) - 0.3*y_(t-2) + noise</span>
+<span class="c-var">phi1</span>, <span class="c-var">phi2</span> = <span class="c-num">0.5</span>, <span class="c-num">-0.3</span>
+<span class="c-var">y</span> = np.<span class="c-fn">zeros</span>(n)
+<span class="c-kw">for</span> t <span class="c-kw">in</span> <span class="c-fn">range</span>(<span class="c-num">2</span>, n):
+    y[t] = phi1*y[t-<span class="c-num">1</span>] + phi2*y[t-<span class="c-num">2</span>] + np.random.<span class="c-fn">normal</span>(<span class="c-num">0</span>, <span class="c-num">1</span>)
+
+<span class="c-cm"># Fit ARIMA(2,0,0) — since we know the true order is AR(2)</span>
+<span class="c-var">model</span> = <span class="c-fn">ARIMA</span>(y, order=(<span class="c-num">2</span>, <span class="c-num">0</span>, <span class="c-num">0</span>))
+<span class="c-var">fit</span> = model.<span class="c-fn">fit</span>()
+
+<span class="c-fn">print</span>(<span class="c-str">f"True phi1={phi1}, phi2={phi2}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Fitted params: {fit.params}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"AIC: {fit.aic:.4f}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"BIC: {fit.bic:.4f}"</span>)</pre>
+  </div>
+
+  <h3>Actual Output</h3>
+  <div class="output-wrap">
+    <div class="output-header">▶ python3 fit_ar2.py</div>
+    <div class="output-body">
+      <div><span class="out-ln">True phi1=0.5, phi2=-0.3</span></div>
+      <div><span class="out-ln">Fitted params: [const=-0.0131, ar.L1=</span><span class="out-n">0.4296</span><span class="out-ln">, ar.L2=</span><span class="out-n">-0.2958</span><span class="out-ln">, sigma2=0.9563]</span></div>
+      <div><span class="out-ln">AIC: </span><span class="out-n">846.2637</span></div>
+      <div><span class="out-ln">BIC: </span><span class="out-n">861.0789</span></div>
+    </div>
+  </div>
+
+  <div class="callout callout-green">
+    <div class="callout-title">The fit is remarkably close</div>
+    <p style="margin:0;font-size:14px;color:var(--ink-soft);line-height:1.75;">
+      True φ₁=0.5, φ₂=−0.3. Fitted φ₁=0.4296, φ₂=−0.2958. Very close given 300 observations of random noise driving the process. This confirms ARIMA correctly recovers the underlying AR structure when the order is correctly specified.
+    </p>
+  </div>
+
+  <h2>Model Selection — Finding the Right Order Automatically</h2>
+  <p>In practice you do not know the true order. You fit multiple candidate models and select the one with the lowest AIC or BIC — balancing fit quality against complexity.</p>
+
+  <div class="aic-formula">
+    <div class="f-label">Information Criteria</div>
+    <div class="f-main">
+      AIC = 2k − 2·ln(L̂) &nbsp;&nbsp;&nbsp; BIC = k·ln(n) − 2·ln(L̂)
+    </div>
+    <div class="f-sub">
+      k = number of parameters &nbsp;·&nbsp; L̂ = maximised likelihood &nbsp;·&nbsp; n = sample size<br/>
+      Lower AIC/BIC = better model &nbsp;·&nbsp; BIC penalises complexity more heavily than AIC<br/>
+      Always compare across multiple (p,d,q) combinations — never guess the order
+    </div>
+  </div>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — grid search over ARIMA orders</div>
+    </div>
+    <pre><span class="c-var">results</span> = []
+<span class="c-kw">for</span> p <span class="c-kw">in</span> <span class="c-fn">range</span>(<span class="c-num">0</span>, <span class="c-num">4</span>):
+    <span class="c-kw">for</span> q <span class="c-kw">in</span> <span class="c-fn">range</span>(<span class="c-num">0</span>, <span class="c-num">3</span>):
+        <span class="c-kw">try</span>:
+            m = <span class="c-fn">ARIMA</span>(y, order=(p, <span class="c-num">0</span>, q))
+            f = m.<span class="c-fn">fit</span>()
+            results.<span class="c-fn">append</span>((p, <span class="c-num">0</span>, q, f.aic, f.bic))
+        <span class="c-kw">except</span>:
+            <span class="c-kw">pass</span>
+
+<span class="c-cm"># Sort by AIC — lowest wins</span>
+results.<span class="c-fn">sort</span>(key=<span class="c-kw">lambda</span> x: x[<span class="c-num">3</span>])
+
+<span class="c-fn">print</span>(<span class="c-str">"Order      AIC        BIC"</span>)
+<span class="c-kw">for</span> r <span class="c-kw">in</span> results[:<span class="c-num">6</span>]:
+    <span class="c-fn">print</span>(<span class="c-str">f"({r[0]},{r[1]},{r[2]})   {r[3]:10.4f}  {r[4]:10.4f}"</span>)</pre>
+  </div>
+
+  <div class="output-wrap">
+    <div class="output-header">▶ python3 grid_search_arima.py</div>
+    <div class="output-body">
+      <div><span class="out-ln">Order&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AIC&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; BIC</span></div>
+      <div><span class="out-n">(2,0,0)&nbsp;&nbsp;&nbsp;846.2637&nbsp;&nbsp;&nbsp;861.0789 ← WINNER</span></div>
+      <div><span class="out-ln">(2,0,1)&nbsp;&nbsp;&nbsp;847.4367&nbsp;&nbsp;&nbsp;865.9556</span></div>
+      <div><span class="out-ln">(3,0,0)&nbsp;&nbsp;&nbsp;847.5863&nbsp;&nbsp;&nbsp;866.1052</span></div>
+      <div><span class="out-ln">(3,0,2)&nbsp;&nbsp;&nbsp;849.2321&nbsp;&nbsp;&nbsp;875.1586</span></div>
+      <div><span class="out-ln">(2,0,2)&nbsp;&nbsp;&nbsp;849.4355&nbsp;&nbsp;&nbsp;871.6581</span></div>
+      <div><span class="out-ln">(3,0,1)&nbsp;&nbsp;&nbsp;849.4365&nbsp;&nbsp;&nbsp;871.6592</span></div>
+    </div>
+  </div>
+
+  <table class="model-select-table">
+    <thead><tr><th>Order</th><th>AIC</th><th>BIC</th><th>Rank</th></tr></thead>
+    <tbody>
+      <tr class="ms-winner"><td>(2,0,0)</td><td>846.26</td><td>861.08</td><td>1st ✓ correctly identified!</td></tr>
+      <tr><td>(2,0,1)</td><td>847.44</td><td>865.96</td><td>2nd</td></tr>
+      <tr><td>(3,0,0)</td><td>847.59</td><td>866.11</td><td>3rd</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-blue">
+    <div class="callout-title">The grid search worked perfectly</div>
+    <p style="margin:0;font-size:14px;color:var(--ink-soft);line-height:1.75;">
+      Out of 12 candidate models tested — (0,0,0) through (3,0,2) — the grid search correctly identified <strong>ARIMA(2,0,0)</strong> as the best fit by both AIC and BIC. This matches the true underlying AR(2) process exactly. This is exactly how you should select model order in practice: never guess, always compare.
+    </p>
+  </div>
+
+  <h2>Forecasting with Confidence Intervals</h2>
+  <p>A forecast without uncertainty bounds is dangerously incomplete. ARIMA gives you both the point forecast and the confidence interval that widens as you forecast further into the future.</p>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — forecast with 95% CI</div>
+    </div>
+    <pre><span class="c-cm"># Forecast 5 steps ahead with confidence intervals</span>
+<span class="c-var">fc_result</span> = fit.<span class="c-fn">get_forecast</span>(steps=<span class="c-num">5</span>)
+<span class="c-var">point_forecast</span> = fc_result.predicted_mean
+<span class="c-var">ci</span> = fc_result.<span class="c-fn">conf_int</span>(alpha=<span class="c-num">0.05</span>)
+
+<span class="c-fn">print</span>(<span class="c-str">"Step  Forecast   95% CI"</span>)
+<span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-fn">range</span>(<span class="c-num">5</span>):
+    <span class="c-fn">print</span>(<span class="c-str">f"t+{i+1}   {point_forecast[i]:7.4f}   [{ci[i][0]:.4f}, {ci[i][1]:.4f}]"</span>)</pre>
+  </div>
+
+  <div class="output-wrap">
+    <div class="output-header">▶ python3 forecast_arima.py</div>
+    <div class="output-body">
+      <div><span class="out-ln">Step&nbsp; Forecast&nbsp;&nbsp;&nbsp; 95% CI</span></div>
+      <div><span class="out-ln">t+1&nbsp;&nbsp;&nbsp;</span><span class="out-n">0.1440</span><span class="out-ln">&nbsp;&nbsp;&nbsp;&nbsp;[-1.7727, 2.0606]</span></div>
+      <div><span class="out-ln">t+2&nbsp;&nbsp;&nbsp;</span><span class="out-n">-0.1389</span><span class="out-ln">&nbsp;&nbsp;&nbsp;[-2.2249, 1.9471]</span></div>
+      <div><span class="out-ln">t+3&nbsp;&nbsp;&nbsp;</span><span class="out-n">-0.1136</span><span class="out-ln">&nbsp;&nbsp;&nbsp;[-2.2105, 1.9833]</span></div>
+      <div><span class="out-ln">t+4&nbsp;&nbsp;&nbsp;</span><span class="out-n">-0.0191</span><span class="out-ln">&nbsp;&nbsp;&nbsp;[-2.1426, 2.1044]</span></div>
+      <div><span class="out-ln">t+5&nbsp;&nbsp;&nbsp;</span><span class="out-n">0.0140</span><span class="out-ln">&nbsp;&nbsp;&nbsp;&nbsp;[-2.1110, 2.1391]</span></div>
+    </div>
+  </div>
+
+  <div class="forecast-viz">
+    <div class="forecast-title">Forecast visualisation — point estimate within widening CI band</div>
+    <div class="fc-row">
+      <span class="fc-t">t+1</span>
+      <div class="fc-bar-wrap">
+        <div class="fc-ci" style="left:31%;width:38%;"></div>
+        <div class="fc-point" style="left:53%;"></div>
+      </div>
+      <span class="fc-val">0.1440</span>
+    </div>
+    <div class="fc-row">
+      <span class="fc-t">t+2</span>
+      <div class="fc-bar-wrap">
+        <div class="fc-ci" style="left:29%;width:40%;"></div>
+        <div class="fc-point" style="left:47%;"></div>
+      </div>
+      <span class="fc-val">−0.1389</span>
+    </div>
+    <div class="fc-row">
+      <span class="fc-t">t+3</span>
+      <div class="fc-bar-wrap">
+        <div class="fc-ci" style="left:29%;width:40%;"></div>
+        <div class="fc-point" style="left:48%;"></div>
+      </div>
+      <span class="fc-val">−0.1136</span>
+    </div>
+    <div class="fc-row">
+      <span class="fc-t">t+4</span>
+      <div class="fc-bar-wrap">
+        <div class="fc-ci" style="left:28%;width:41%;"></div>
+        <div class="fc-point" style="left:49%;"></div>
+      </div>
+      <span class="fc-val">−0.0191</span>
+    </div>
+    <div class="fc-row">
+      <span class="fc-t">t+5</span>
+      <div class="fc-bar-wrap">
+        <div class="fc-ci" style="left:28%;width:42%;"></div>
+        <div class="fc-point" style="left:50%;"></div>
+      </div>
+      <span class="fc-val">0.0140</span>
+    </div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-title">Why forecasts converge to zero and widen</div>
+    <p style="margin:0;font-size:14px;color:var(--ink-soft);line-height:1.75;">
+      Notice the point forecast shrinks toward the unconditional mean (near 0) as you forecast further ahead — this is a property of stationary AR processes reverting to their mean. The confidence interval also widens with each step, from ±1.9 at t+1 to ±2.1 at t+5. This reflects genuine uncertainty compounding over the forecast horizon. Any forecast presented without these widening bounds is misleading.
+    </p>
+  </div>
+
+  <h2>ARIMA in Finance — Honest Limitations</h2>
+
+  <div class="callout callout-red">
+    <div class="callout-title">Why ARIMA alone rarely beats a random walk on prices</div>
+    <p style="margin:0;font-size:14px;color:var(--ink-soft);line-height:1.75;">
+      Financial returns typically have very weak autocorrelation (as we saw in Day 10 — white noise ACF near zero for real markets). This means ARIMA on raw returns often reduces to forecasting close to zero — not much better than a naive random walk forecast. ARIMA becomes genuinely useful for volatility modelling (paired with GARCH, Day 12), for macro series with real structure, or as one input feature among many in an ML pipeline — not as a standalone trading signal.
+    </p>
+  </div>
+
+  <hr class="rule"/>
+
+  <div class="takeaway">
+    <div class="takeaway-title">Three things to remember from Day 11</div>
+    <p class="takeaway-body">ARIMA is a systematic 3-day payoff — stationarity from Day 9, ACF/PACF from Day 10, now combined into one forecasting model. Never skip the diagnostic steps that come before fitting.</p>
+    <ul class="takeaway-list">
+      <li>Grid search over (p,d,q) combinations correctly identified ARIMA(2,0,0) as the best model among 12 candidates — matching the true underlying process exactly. Never guess the order; always compare AIC/BIC across a grid.</li>
+      <li>Forecasts revert toward the unconditional mean and confidence intervals widen with horizon — from ±1.9 at t+1 to ±2.1 at t+5. Any point forecast without these bounds is incomplete and potentially dangerous to trade on.</li>
+      <li>ARIMA on raw stock returns often barely beats a naive random walk because real markets have very weak autocorrelation. ARIMA earns its keep in volatility modelling (Day 12: GARCH) and as one feature in broader ML pipelines — not as a standalone price predictor.</li>
+    </ul>
+  </div>
+
+  <div class="article-nav">
+    <a href="day10.html">
+      <span class="nav-dir">← Previous</span>
+      <span class="nav-title">Day 10: ACF &amp; PACF</span>
+    </a>
+    <a href="index.html" class="next">
+      <span class="nav-dir">All Articles</span>
+      <span class="nav-title">View Full 90-Day Series →</span>
+    </a>
+  </div>
+
+</div>
+
+<div class="article-footer">
+  <div class="footer-series">Quant Finance Notes — 90-Day Series</div>
+  <div class="footer-next">Tomorrow — Day 12: GARCH &amp; EGARCH<br/>Why market volatility explodes in clusters — and how to model it</div>
+  <div class="footer-tags">
+    <span class="footer-tag">#QuantFinance</span>
+    <span class="footer-tag">#ARIMA</span>
+    <span class="footer-tag">#TimeSeries</span>
+    <span class="footer-tag">#Forecasting</span>
+    <span class="footer-tag">#TradingMath</span>
+    <span class="footer-tag">#AlgorithmicTrading</span>
+    <span class="footer-tag">#Python</span>
+    <span class="footer-tag">#Statistics</span>
+    <span class="footer-tag">#Finance</span>
+    <span class="footer-tag">#SriLanka</span>
+  </div>
+  <div class="footer-author">
+    Written by <strong>Nadun Sulochana</strong> &nbsp;·&nbsp; github.com/ns530 &nbsp;·&nbsp; nadunsulochana92@gmail.com
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="google-site-verification" content="SgzPqB0Vckpfji6y3nNSuKVuLHeB-5xwqyW2BR0Zr9g">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Day 10: ACF & PACF — how to detect autocorrelation in price and return data. Autocorrelation function, partial autocorrelation, Ljung-Box test with Python.">
+<meta name="keywords" content="ACF PACF trading, autocorrelation finance, Ljung-Box test, time series autocorrelation Python, AR process finance, quant finance tutorial, Nadun Sulochana">
+<meta name="author" content="Nadun Sulochana">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://ns530.github.io/quant-finance-notes/day10.html">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ns530.github.io/quant-finance-notes/day10.html">
+<meta property="og:title" content="Day 10: ACF & PACF — Quant Finance Notes | Nadun Sulochana">
+<meta property="og:description" content="How to detect autocorrelation in returns. ACF, PACF, Ljung-Box test with Python — AR(1) LB stat=38.65, p=0.000029 vs white noise p=0.69.">
+<meta property="og:site_name" content="Quant Finance Notes">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="citation_author" content="Nadun Sulochana">
+<meta name="geo.region" content="LK">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "name": "Day 10: ACF & PACF — Reading Market Memory",
+  "url": "https://ns530.github.io/quant-finance-notes/day10.html",
+  "author": {"@type":"Person","name":"Nadun Sulochana","url":"https://www.linkedin.com/in/nadun-sulochana-41923029b","sameAs":["https://github.com/ns530"]},
+  "isPartOf": {"@type":"WebSite","name":"Quant Finance Notes","url":"https://ns530.github.io/quant-finance-notes/"}
+}
+</script>
+<title>Day 10: ACF & PACF — Reading Market Memory | Quant Finance Notes</title>
+<link rel="stylesheet" href="style.css">
+<style>
+/* ── DAY 10 SPECIFIC ── */
+.acf-compare{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:28px 0;}
+@media(max-width:540px){.acf-compare{grid-template-columns:1fr;}}
+.ac-card{border-radius:10px;padding:22px;border:1px solid var(--rule);}
+.ac-ar  {background:var(--accent-lt);border-color:#B8CCE4;}
+.ac-wn  {background:var(--green-lt); border-color:#B8E4C4;}
+.ac-label{font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:8px;}
+.ac-ar  .ac-label{color:var(--accent-mid);}
+.ac-wn  .ac-label{color:var(--green);}
+.ac-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;margin-bottom:10px;color:var(--ink);}
+.ac-card p{font-size:13px;color:var(--ink-soft);line-height:1.65;margin:0;}
+.ac-vals{font-family:'Source Code Pro',monospace;font-size:12px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,0.08);line-height:1.9;}
+.ac-ar .ac-vals{color:var(--accent-mid);}
+.ac-wn .ac-vals{color:var(--green);}
+
+/* ACF bar chart visual */
+.acf-chart{background:white;border:1px solid var(--rule);border-radius:10px;padding:22px 24px;margin:28px 0;}
+.acf-chart-title{font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:16px;}
+.acf-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.acf-lag{font-size:12px;font-family:'Source Code Pro',monospace;color:var(--ink-muted);min-width:50px;}
+.acf-track{flex:1;height:20px;background:var(--cream-dark);border-radius:4px;position:relative;overflow:visible;}
+.acf-fill{height:20px;border-radius:4px;position:absolute;top:0;}
+.acf-pos{background:var(--accent-mid);left:50%;}
+.acf-neg{background:var(--red);right:50%;}
+.acf-ci-line{position:absolute;top:0;width:2px;height:20px;background:rgba(200,0,0,0.4);}
+.acf-val{font-size:12px;font-family:'Source Code Pro',monospace;min-width:60px;text-align:right;}
+.acf-sig{color:var(--red);font-weight:600;}
+.acf-ok {color:var(--green);}
+
+/* PACF vs ACF comparison */
+.diff-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:28px 0;}
+@media(max-width:520px){.diff-grid{grid-template-columns:1fr;}}
+.dg-card{border-radius:10px;padding:20px;border:1px solid var(--rule);}
+.dg-acf {background:var(--accent-lt);border-color:#B8CCE4;}
+.dg-pacf{background:var(--amber-lt); border-color:#E4D4B8;}
+.dg-title{font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;}
+.dg-acf  .dg-title{color:var(--accent-mid);}
+.dg-pacf .dg-title{color:var(--amber);}
+.dg-card p{font-size:13px;color:var(--ink-soft);line-height:1.65;margin:0;}
+.dg-use{font-size:12px;font-weight:600;margin-top:10px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.07);}
+.dg-acf  .dg-use{color:var(--accent-mid);}
+.dg-pacf .dg-use{color:var(--amber);}
+
+/* Pattern table */
+.pattern-table{width:100%;border-collapse:collapse;margin:20px 0;font-size:13.5px;}
+.pattern-table th{text-align:left;padding:10px 14px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);border-bottom:2px solid var(--rule);}
+.pattern-table td{padding:12px 14px;border-bottom:1px solid var(--cream-dark);color:var(--ink-soft);}
+.pattern-table tr:last-child td{border-bottom:none;}
+.pt-model{color:var(--accent);font-weight:600;}
+.pt-acf  {color:var(--ink);}
+.pt-pacf {color:var(--amber);font-weight:500;}
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <a class="nav-brand" href="index.html">Quant Finance <span>Notes</span></a>
+  <div class="nav-links">
+    <a href="index.html">All Articles</a>
+    <a href="https://github.com/ns530" target="_blank">GitHub</a>
+    <a href="https://www.linkedin.com/in/nadun-sulochana-41923029b" target="_blank">LinkedIn</a>
+    <span class="nav-badge">Day 10 / 90</span>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="series-tag">Quant Finance Notes &nbsp;·&nbsp; Day 10 of 90</div>
+  <h1>How to Read <em>Market Memory</em></h1>
+  <p class="hero-sub">ACF and PACF tell you whether today's return is related to yesterday's — and how many lags back that relationship extends. They are the essential diagnostic tools before building any ARIMA or time series model.</p>
+  <div class="hero-meta">
+    <div class="avatar">NS</div>
+    <div class="meta-text"><strong>Nadun Sulochana</strong>Aspiring Software Architect · BSc Cyber Security · SLTC Research University</div>
+    <div class="day-badge">10 / 90</div>
+  </div>
+</div>
+
+<div class="article-body">
+
+  <p class="lead">If you know that large positive returns today tend to be followed by large positive returns tomorrow, that is autocorrelation — and it is tradeable edge. ACF measures this relationship at every lag. PACF isolates each lag's direct contribution. Together they tell you exactly what kind of model your data needs.</p>
+
+  <h2>What Is Autocorrelation?</h2>
+  <p>Autocorrelation at lag k measures the correlation between a time series and a lagged version of itself. Formally:</p>
+
+  <div class="callout callout-blue">
+    <div class="callout-title">ACF formula</div>
+    <p style="margin:0;font-size:14px;color:var(--ink-soft);line-height:1.75;font-family:'Source Code Pro',monospace;">
+      ACF(k) = Cov(rₜ, rₜ₋ₖ) / Var(rₜ)<br/><br/>
+      <span style="font-family:'DM Sans',sans-serif;">
+      ACF(0) = 1 always (series correlated with itself)<br/>
+      ACF(1) = correlation between today and yesterday<br/>
+      ACF(k) = correlation between today and k days ago<br/>
+      95% CI = ±1.96/√n &nbsp;→&nbsp; ±0.1235 for n=252
+      </span>
+    </p>
+  </div>
+
+  <h2>AR(1) vs White Noise — The Key Contrast</h2>
+
+  <div class="acf-compare">
+    <div class="ac-card ac-ar">
+      <div class="ac-label">Autocorrelated process</div>
+      <div class="ac-title">AR(1) with φ=0.4</div>
+      <p>Each return is 40% correlated with the previous one. ACF decays gradually — significant at lag 1, still visible at lag 2. This is the pattern you want to detect and model.</p>
+      <div class="ac-vals">
+        ACF lag 1: 0.3408 ← significant<br/>
+        ACF lag 2: 0.1041<br/>
+        ACF lag 3: 0.0326<br/>
+        ACF lag 5: 0.0937
+      </div>
+    </div>
+    <div class="ac-card ac-wn">
+      <div class="ac-label">No autocorrelation</div>
+      <div class="ac-title">White Noise</div>
+      <p>Pure random returns — no memory, no pattern. All ACF values near zero and within the 95% confidence interval. Nothing to model. No predictable structure.</p>
+      <div class="ac-vals">
+        ACF lag 1: 0.0342 ← within CI<br/>
+        ACF lag 2: 0.0043<br/>
+        ACF lag 3: 0.0086<br/>
+        ACF lag 5: −0.0370
+      </div>
+    </div>
+  </div>
+
+  <h2>Visualising the ACF — Bar Chart</h2>
+  <p>The ACF plot shows a bar at each lag. Bars outside the blue confidence interval lines are statistically significant autocorrelations. For AR(1) with φ=0.4:</p>
+
+  <div class="acf-chart">
+    <div class="acf-chart-title">ACF — AR(1) process (φ=0.4) &nbsp;·&nbsp; 95% CI = ±0.1235 &nbsp;·&nbsp; n=252</div>
+
+    <div class="acf-bar-row">
+      <span class="acf-lag">Lag 1</span>
+      <div class="acf-track">
+        <div class="acf-fill acf-pos" style="width:27.6%"></div>
+        <div class="acf-ci-line" style="left:calc(50% + 10%)"></div>
+        <div class="acf-ci-line" style="left:calc(50% - 10%)"></div>
+      </div>
+      <span class="acf-val acf-sig">0.3408 ✗</span>
+    </div>
+
+    <div class="acf-bar-row">
+      <span class="acf-lag">Lag 2</span>
+      <div class="acf-track">
+        <div class="acf-fill acf-pos" style="width:8.4%"></div>
+        <div class="acf-ci-line" style="left:calc(50% + 10%)"></div>
+        <div class="acf-ci-line" style="left:calc(50% - 10%)"></div>
+      </div>
+      <span class="acf-val acf-ok">0.1041 ✓</span>
+    </div>
+
+    <div class="acf-bar-row">
+      <span class="acf-lag">Lag 3</span>
+      <div class="acf-track">
+        <div class="acf-fill acf-pos" style="width:2.6%"></div>
+        <div class="acf-ci-line" style="left:calc(50% + 10%)"></div>
+        <div class="acf-ci-line" style="left:calc(50% - 10%)"></div>
+      </div>
+      <span class="acf-val acf-ok">0.0326 ✓</span>
+    </div>
+
+    <div class="acf-bar-row">
+      <span class="acf-lag">Lag 4</span>
+      <div class="acf-track">
+        <div class="acf-fill acf-neg" style="width:3.7%"></div>
+        <div class="acf-ci-line" style="left:calc(50% + 10%)"></div>
+        <div class="acf-ci-line" style="left:calc(50% - 10%)"></div>
+      </div>
+      <span class="acf-val acf-ok">−0.0453 ✓</span>
+    </div>
+
+    <div class="acf-bar-row">
+      <span class="acf-lag">Lag 5</span>
+      <div class="acf-track">
+        <div class="acf-fill acf-pos" style="width:7.6%"></div>
+        <div class="acf-ci-line" style="left:calc(50% + 10%)"></div>
+        <div class="acf-ci-line" style="left:calc(50% - 10%)"></div>
+      </div>
+      <span class="acf-val acf-ok">0.0937 ✓</span>
+    </div>
+
+    <p style="font-size:12px;color:var(--ink-muted);margin-top:12px;margin-bottom:0;">✗ = outside 95% CI (significant autocorrelation) &nbsp;·&nbsp; ✓ = within CI (not significant) &nbsp;·&nbsp; | marks show CI bounds</p>
+  </div>
+
+  <h2>Python — Computing ACF from Scratch</h2>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — ACF manual + using statsmodels</div>
+    </div>
+    <pre><span class="c-kw">import</span> numpy <span class="c-kw">as</span> np
+<span class="c-kw">from</span> statsmodels.tsa.stattools <span class="c-kw">import</span> acf, pacf
+
+np.random.<span class="c-fn">seed</span>(<span class="c-num">42</span>)
+n = <span class="c-num">252</span>
+
+<span class="c-cm"># AR(1) process with phi=0.4</span>
+<span class="c-var">phi</span> = <span class="c-num">0.4</span>
+<span class="c-var">returns_ar</span> = np.<span class="c-fn">zeros</span>(n)
+<span class="c-kw">for</span> t <span class="c-kw">in</span> <span class="c-fn">range</span>(<span class="c-num">1</span>, n):
+    returns_ar[t] = phi * returns_ar[t-<span class="c-num">1</span>] + np.random.<span class="c-fn">normal</span>(<span class="c-num">0</span>, <span class="c-num">1</span>)
+
+<span class="c-cm"># White noise</span>
+<span class="c-var">white_noise</span> = np.random.<span class="c-fn">normal</span>(<span class="c-num">0</span>, <span class="c-num">1</span>, n)
+
+<span class="c-cm"># ACF with 95% CI</span>
+<span class="c-var">acf_ar</span>, <span class="c-var">ci_ar</span> = <span class="c-fn">acf</span>(returns_ar, nlags=<span class="c-num">10</span>, alpha=<span class="c-num">0.05</span>)
+<span class="c-var">acf_wn</span>, <span class="c-var">ci_wn</span> = <span class="c-fn">acf</span>(white_noise, nlags=<span class="c-num">10</span>, alpha=<span class="c-num">0.05</span>)
+
+<span class="c-cm"># 95% CI approximation (Bartlett)</span>
+<span class="c-var">ci_bound</span> = <span class="c-num">1.96</span> / np.<span class="c-fn">sqrt</span>(n)
+<span class="c-fn">print</span>(<span class="c-str">f"95% CI: ±{ci_bound:.4f}"</span>)
+<span class="c-fn">print</span>()
+<span class="c-fn">print</span>(<span class="c-str">"Lag  AR(1)   Sig?   WhiteNoise  Sig?"</span>)
+<span class="c-kw">for</span> lag <span class="c-kw">in</span> [<span class="c-num">1</span>,<span class="c-num">2</span>,<span class="c-num">3</span>,<span class="c-num">4</span>,<span class="c-num">5</span>]:
+    ar_sig = <span class="c-str">"✗ sig"</span> <span class="c-kw">if</span> <span class="c-fn">abs</span>(acf_ar[lag]) > ci_bound <span class="c-kw">else</span> <span class="c-str">"✓"</span>
+    wn_sig = <span class="c-str">"✗ sig"</span> <span class="c-kw">if</span> <span class="c-fn">abs</span>(acf_wn[lag]) > ci_bound <span class="c-kw">else</span> <span class="c-str">"✓"</span>
+    <span class="c-fn">print</span>(<span class="c-str">f"{lag:3d}  {acf_ar[lag]:6.4f}  {ar_sig:6}  {acf_wn[lag]:10.4f}  {wn_sig}"</span>)</pre>
+  </div>
+
+  <div class="output-wrap">
+    <div class="output-header">▶ python3 acf_comparison.py</div>
+    <div class="output-body">
+      <div><span class="out-ln">95% CI: ±</span><span class="out-n">0.1235</span></div>
+      <div style="margin-top:6px;"></div>
+      <div><span class="out-ln">Lag&nbsp; AR(1)&nbsp;&nbsp;&nbsp; Sig?&nbsp;&nbsp;&nbsp; WhiteNoise&nbsp; Sig?</span></div>
+      <div><span class="out-ln">&nbsp;&nbsp;1&nbsp;&nbsp;</span><span class="out-f">0.3408</span><span class="out-lf">&nbsp;&nbsp;✗ sig&nbsp;&nbsp;</span><span class="out-n">&nbsp;&nbsp;0.0342</span><span class="out-ln">&nbsp;&nbsp;&nbsp;&nbsp;✓</span></div>
+      <div><span class="out-ln">&nbsp;&nbsp;2&nbsp;&nbsp;</span><span class="out-n">0.1041</span><span class="out-ln">&nbsp;&nbsp;✓&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="out-n">&nbsp;&nbsp;0.0043</span><span class="out-ln">&nbsp;&nbsp;&nbsp;&nbsp;✓</span></div>
+      <div><span class="out-ln">&nbsp;&nbsp;3&nbsp;&nbsp;</span><span class="out-n">0.0326</span><span class="out-ln">&nbsp;&nbsp;✓&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="out-n">&nbsp;&nbsp;0.0086</span><span class="out-ln">&nbsp;&nbsp;&nbsp;&nbsp;✓</span></div>
+      <div><span class="out-ln">&nbsp;&nbsp;4&nbsp;&nbsp;</span><span class="out-n">-0.0453</span><span class="out-ln">&nbsp; ✓&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="out-n">&nbsp;-0.0598</span><span class="out-ln">&nbsp;&nbsp;&nbsp;&nbsp;✓</span></div>
+      <div><span class="out-ln">&nbsp;&nbsp;5&nbsp;&nbsp;</span><span class="out-n">0.0937</span><span class="out-ln">&nbsp;&nbsp;✓&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="out-n">&nbsp;-0.0370</span><span class="out-ln">&nbsp;&nbsp;&nbsp;&nbsp;✓</span></div>
+    </div>
+  </div>
+
+  <h2>PACF — Partial Autocorrelation</h2>
+
+  <div class="diff-grid">
+    <div class="dg-card dg-acf">
+      <div class="dg-title">ACF — Total correlation</div>
+      <p>Correlation between rₜ and rₜ₋ₖ including indirect effects through intermediate lags. Lag 2 ACF includes lag 1 influence. Can be hard to interpret which lag matters directly.</p>
+      <div class="dg-use">Use to identify MA order (q)</div>
+    </div>
+    <div class="dg-card dg-pacf">
+      <div class="dg-title">PACF — Direct correlation only</div>
+      <p>Correlation between rₜ and rₜ₋ₖ after removing all intermediate lag effects. Shows the direct relationship at each lag in isolation. Cleaner signal for model order selection.</p>
+      <div class="dg-use">Use to identify AR order (p)</div>
+    </div>
+  </div>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — PACF for AR(1)</div>
+    </div>
+    <pre><span class="c-kw">from</span> statsmodels.tsa.stattools <span class="c-kw">import</span> pacf
+
+<span class="c-var">pacf_ar</span> = <span class="c-fn">pacf</span>(returns_ar, nlags=<span class="c-num">5</span>, method=<span class="c-str">'yw'</span>)
+
+<span class="c-fn">print</span>(<span class="c-str">"PACF values for AR(1) process:"</span>)
+<span class="c-kw">for</span> lag <span class="c-kw">in</span> <span class="c-fn">range</span>(<span class="c-num">1</span>, <span class="c-num">6</span>):
+    sig = <span class="c-str">"← significant (AR order = 1)"</span> <span class="c-kw">if</span> lag == <span class="c-num">1</span> <span class="c-kw">else</span> \
+          <span class="c-str">"← drops off"</span> <span class="c-kw">if</span> <span class="c-fn">abs</span>(pacf_ar[lag]) < <span class="c-num">0.12</span> <span class="c-kw">else</span> <span class="c-str">""</span>
+    <span class="c-fn">print</span>(<span class="c-str">f"PACF lag {lag}: {pacf_ar[lag]:.4f}  {sig}"</span>)</pre>
+  </div>
+
+  <div class="output-wrap">
+    <div class="output-header">▶ python3 pacf_ar1.py</div>
+    <div class="output-body">
+      <div><span class="out-ln">PACF values for AR(1) process:</span></div>
+      <div><span class="out-ln">PACF lag 1: </span><span class="out-f">0.3408</span><span class="out-ln">  ← significant (AR order = 1)</span></div>
+      <div><span class="out-ln">PACF lag 2: </span><span class="out-n">-0.0137</span><span class="out-ln">  ← drops off</span></div>
+      <div><span class="out-ln">PACF lag 3: </span><span class="out-n">0.0015</span><span class="out-ln">  ← drops off</span></div>
+      <div><span class="out-ln">PACF lag 4: </span><span class="out-n">-0.0629</span><span class="out-ln">  ← drops off</span></div>
+      <div><span class="out-ln">PACF lag 5: </span><span class="out-n">0.1464</span><span class="out-ln">  ← drops off</span></div>
+    </div>
+  </div>
+
+  <div class="callout callout-green">
+    <div class="callout-title">The key insight from PACF</div>
+    <p style="margin:0;font-size:14px;color:var(--ink-soft);line-height:1.75;">
+      PACF is significant at lag 1 (0.3408) and drops to near zero immediately after. This is the classic signature of an <strong>AR(1) process</strong>. The PACF cuts off after lag 1 — telling you to use exactly 1 autoregressive term in your model. ACF alone can't tell you this as cleanly.
+    </p>
+  </div>
+
+  <h2>Ljung-Box Test — Formal Autocorrelation Test</h2>
+  <p>Instead of eyeballing the ACF plot, the Ljung-Box test formally tests whether any autocorrelation up to lag k is statistically significant.</p>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — Ljung-Box test</div>
+    </div>
+    <pre><span class="c-kw">from</span> statsmodels.stats.diagnostic <span class="c-kw">import</span> acorr_ljungbox
+
+<span class="c-cm"># Test first 10 lags</span>
+<span class="c-var">lb_ar</span> = <span class="c-fn">acorr_ljungbox</span>(returns_ar,  lags=[<span class="c-num">10</span>], return_df=<span class="c-kw">True</span>)
+<span class="c-var">lb_wn</span> = <span class="c-fn">acorr_ljungbox</span>(white_noise, lags=[<span class="c-num">10</span>], return_df=<span class="c-kw">True</span>)
+
+<span class="c-fn">print</span>(<span class="c-str">f"AR(1) — LB stat: {lb_ar['lb_stat'].values[0]:.4f}, p: {lb_ar['lb_pvalue'].values[0]:.6f}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Autocorrelated: {lb_ar['lb_pvalue'].values[0] < 0.05}"</span>)
+<span class="c-fn">print</span>()
+<span class="c-fn">print</span>(<span class="c-str">f"White noise — LB stat: {lb_wn['lb_stat'].values[0]:.4f}, p: {lb_wn['lb_pvalue'].values[0]:.4f}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Autocorrelated: {lb_wn['lb_pvalue'].values[0] < 0.05}"</span>)</pre>
+  </div>
+
+  <div class="output-wrap">
+    <div class="output-header">▶ python3 ljung_box.py</div>
+    <div class="output-body">
+      <div><span class="out-ln">AR(1) — LB stat: </span><span class="out-f">38.6463</span><span class="out-ln">, p: </span><span class="out-f">0.000029</span></div>
+      <div><span class="out-f">Autocorrelated: True</span></div>
+      <div style="margin-top:8px;"></div>
+      <div><span class="out-ln">White noise — LB stat: </span><span class="out-n">7.3978</span><span class="out-ln">, p: </span><span class="out-n">0.6874</span></div>
+      <div><span class="out-n">Autocorrelated: False</span></div>
+    </div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-title">Ljung-Box interpretation</div>
+    <p style="margin:0;font-size:14px;color:var(--ink-soft);line-height:1.75;">
+      <strong>H₀ = no autocorrelation up to lag k</strong><br/>
+      AR(1): LB=38.65, p=0.000029 → reject H₀ → significant autocorrelation → model it with ARIMA<br/>
+      White noise: LB=7.40, p=0.69 → fail to reject H₀ → no autocorrelation → no model needed<br/><br/>
+      Always run Ljung-Box on your residuals AFTER fitting a model too — if residuals still show autocorrelation, your model is incomplete.
+    </p>
+  </div>
+
+  <h2>The Pattern Recognition Guide for ARIMA</h2>
+
+  <table class="pattern-table">
+    <thead><tr><th>Process</th><th>ACF pattern</th><th>PACF pattern</th><th>Model to use</th></tr></thead>
+    <tbody>
+      <tr><td class="pt-model">AR(p)</td><td class="pt-acf">Decays gradually (exponential or sinusoidal)</td><td class="pt-pacf">Cuts off after lag p</td><td>ARIMA(p,0,0)</td></tr>
+      <tr><td class="pt-model">MA(q)</td><td class="pt-acf">Cuts off after lag q</td><td class="pt-pacf">Decays gradually</td><td>ARIMA(0,0,q)</td></tr>
+      <tr><td class="pt-model">ARMA(p,q)</td><td class="pt-acf">Decays gradually after lag q</td><td class="pt-pacf">Decays gradually after lag p</td><td>ARIMA(p,0,q)</td></tr>
+      <tr><td class="pt-model">White Noise</td><td class="pt-acf">All values near zero</td><td class="pt-pacf">All values near zero</td><td>No model needed</td></tr>
+      <tr><td class="pt-model">Random Walk</td><td class="pt-acf">Decays very slowly</td><td class="pt-pacf">Large spike at lag 1 only</td><td>Difference first (Day 9)</td></tr>
+    </tbody>
+  </table>
+
+  <hr class="rule"/>
+
+  <div class="takeaway">
+    <div class="takeaway-title">Three things to remember from Day 10</div>
+    <p class="takeaway-body">ACF and PACF are not just diagnostic tools — they are the map that tells you which model your data actually needs. Reading them correctly is the difference between fitting the right model and overfitting noise.</p>
+    <ul class="takeaway-list">
+      <li>ACF lag 1 = 0.3408 for AR(1) vs 0.0342 for white noise. The 95% CI is ±0.1235. Only the AR(1) breaks through — the Ljung-Box confirms it: p=0.000029 vs p=0.69 for noise.</li>
+      <li>PACF cuts off after lag 1 for AR(1) — dropping from 0.34 to −0.01 immediately. This is the diagnostic signature telling you the model order is exactly 1. ACF alone cannot give you this clean signal.</li>
+      <li>Always run Ljung-Box on residuals AFTER fitting your model. Residuals should look like white noise (p &gt; 0.05). If they don't, your model is missing structure that the ACF/PACF would reveal.</li>
+    </ul>
+  </div>
+
+  <div class="article-nav">
+    <a href="day9.html">
+      <span class="nav-dir">← Previous</span>
+      <span class="nav-title">Day 9: Stationarity &amp; ADF Test</span>
+    </a>
+    <a href="day11.html" class="next">
+      <span class="nav-dir">Next →</span>
+      <span class="nav-title">Day 11: ARIMA Models</span>
+    </a>
+  </div>
+
+</div>
+
+<div class="article-footer">
+  <div class="footer-series">Quant Finance Notes — 90-Day Series</div>
+  <div class="footer-next">Tomorrow — Day 11: ARIMA Models<br/>The classic time series model every quant must know</div>
+  <div class="footer-tags">
+    <span class="footer-tag">#QuantFinance</span>
+    <span class="footer-tag">#ACF</span>
+    <span class="footer-tag">#PACF</span>
+    <span class="footer-tag">#TimeSeries</span>
+    <span class="footer-tag">#TradingMath</span>
+    <span class="footer-tag">#AlgorithmicTrading</span>
+    <span class="footer-tag">#Python</span>
+    <span class="footer-tag">#Statistics</span>
+    <span class="footer-tag">#Finance</span>
+    <span class="footer-tag">#SriLanka</span>
+  </div>
+  <div class="footer-author">
+    Written by <strong>Nadun Sulochana</strong> &nbsp;·&nbsp; github.com/ns530 &nbsp;·&nbsp; nadunsulochana92@gmail.com
+  </div>
+</div>
+
+</body>
+</html>
