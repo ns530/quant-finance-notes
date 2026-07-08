@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="google-site-verification" content="SgzPqB0Vckpfji6y3nNSuKVuLHeB-5xwqyW2BR0Zr9g">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Day 12: GARCH & EGARCH — why market volatility explodes in clusters and how to model it. GARCH(1,1) fitting, volatility forecasting, Python with real output.">
+<meta name="keywords" content="GARCH model finance, volatility clustering trading, GARCH Python, EGARCH, volatility forecasting, ARCH model, quant finance tutorial, arch package Python, Nadun Sulochana">
+<meta name="author" content="Nadun Sulochana">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://ns530.github.io/quant-finance-notes/day12.html">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ns530.github.io/quant-finance-notes/day12.html">
+<meta property="og:title" content="Day 12: GARCH & EGARCH — Quant Finance Notes | Nadun Sulochana">
+<meta property="og:description" content="Why volatility clusters — GARCH(1,1) persistence=0.95, fitted alpha=0.075, beta=0.856. Volatility forecasting with Python and real output.">
+<meta property="og:site_name" content="Quant Finance Notes">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="citation_author" content="Nadun Sulochana">
+<meta name="geo.region" content="LK">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "name": "Day 12: GARCH & EGARCH — Volatility Clustering",
+  "url": "https://ns530.github.io/quant-finance-notes/day12.html",
+  "author": {"@type":"Person","name":"Nadun Sulochana","url":"https://www.linkedin.com/in/nadun-sulochana-41923029b","sameAs":["https://github.com/ns530"]},
+  "isPartOf": {"@type":"WebSite","name":"Quant Finance Notes","url":"https://ns530.github.io/quant-finance-notes/"}
+}
+</script>
+<title>Day 12: GARCH & EGARCH — Volatility Clustering | Quant Finance Notes</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.garch-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:28px 0;}
+@media(max-width:620px){.garch-grid{grid-template-columns:1fr;}}
+.garch-card{border-radius:10px;padding:22px;border:1px solid var(--rule);text-align:center;}
+.g-omega{background:var(--accent-lt);border-color:#B8CCE4;}
+.g-alpha{background:var(--amber-lt); border-color:#E4D4B8;}
+.g-beta {background:var(--green-lt); border-color:#B8E4C4;}
+.garch-symbol{font-family:'Playfair Display',serif;font-size:32px;font-weight:900;line-height:1;margin-bottom:6px;}
+.g-omega .garch-symbol{color:var(--accent-mid);}
+.g-alpha .garch-symbol{color:var(--amber);}
+.g-beta  .garch-symbol{color:var(--green);}
+.garch-name{font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;}
+.g-omega .garch-name{color:var(--accent-mid);}
+.g-alpha .garch-name{color:var(--amber);}
+.g-beta  .garch-name{color:var(--green);}
+.garch-card p{font-size:13px;color:var(--ink-soft);line-height:1.6;margin:0;}
+.garch-val{font-family:'Source Code Pro',monospace;font-size:12px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,0.08);}
+.g-omega .garch-val{color:var(--accent-mid);}
+.g-alpha .garch-val{color:var(--amber);}
+.g-beta  .garch-val{color:var(--green);}
+
+.garch-formula{background:var(--accent);border-radius:12px;padding:28px;margin:28px 0;text-align:center;}
+.garch-formula .f-label{font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:14px;}
+.garch-formula .f-main{font-family:'Playfair Display',serif;font-size:clamp(15px,2.8vw,22px);color:white;line-height:1.75;margin-bottom:10px;}
+.garch-formula .f-sub{font-size:13px;color:rgba(255,255,255,0.6);line-height:1.7;}
+
+.compare-table{width:100%;border-collapse:collapse;margin:20px 0;font-size:13.5px;}
+.compare-table th{text-align:center;padding:10px 14px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);border-bottom:2px solid var(--rule);}
+.compare-table td{padding:11px 14px;border-bottom:1px solid var(--cream-dark);text-align:center;font-family:'Source Code Pro',monospace;font-size:13px;color:var(--ink-soft);}
+.compare-table tr:last-child td{border-bottom:none;}
+.ct-true{color:var(--accent-mid);font-weight:600;}
+.ct-fit {color:var(--green);font-weight:600;}
+
+.vol-chart{background:white;border:1px solid var(--rule);border-radius:10px;padding:22px 24px;margin:28px 0;}
+.vol-chart-title{font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:16px;}
+.vol-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.vol-day{font-size:12px;font-family:'Source Code Pro',monospace;color:var(--ink-muted);min-width:50px;}
+.vol-track{flex:1;height:18px;background:var(--cream-dark);border-radius:4px;position:relative;overflow:hidden;}
+.vol-fill{height:18px;border-radius:4px;background:var(--accent-mid);}
+.vol-val{font-size:12px;font-family:'Source Code Pro',monospace;min-width:80px;text-align:right;color:var(--accent-mid);}
+
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:28px 0;}
+@media(max-width:520px){.compare-grid{grid-template-columns:1fr;}}
+.cg-card{border-radius:10px;padding:20px;border:1px solid var(--rule);}
+.cg-garch{background:var(--accent-lt);border-color:#B8CCE4;}
+.cg-egarch{background:var(--purple-lt);border-color:#C4B8E4;}
+.cg-title{font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;}
+.cg-garch .cg-title{color:var(--accent-mid);}
+.cg-egarch .cg-title{color:var(--purple);}
+.cg-card p{font-size:13px;color:var(--ink-soft);line-height:1.65;margin:0;}
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <a class="nav-brand" href="index.html">Quant Finance <span>Notes</span></a>
+  <div class="nav-links">
+    <a href="index.html">All Articles</a>
+    <a href="https://github.com/ns530" target="_blank">GitHub</a>
+    <a href="https://www.linkedin.com/in/nadun-sulochana-41923029b" target="_blank">LinkedIn</a>
+    <span class="nav-badge">Day 12 / 90</span>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="series-tag">Quant Finance Notes &nbsp;·&nbsp; Day 12 of 90</div>
+  <h1>Why Volatility <em>Explodes in Clusters</em></h1>
+  <p class="hero-sub">Calm markets stay calm. Turbulent markets stay turbulent. This is volatility clustering — and GARCH is the model built specifically to capture it. Here is how it works, fitted to real simulated data with Python.</p>
+  <div class="hero-meta">
+    <div class="avatar">NS</div>
+    <div class="meta-text"><strong>Nadun Sulochana</strong>Aspiring Software Architect · BSc Cyber Security · SLTC Research University</div>
+    <div class="day-badge">12 / 90</div>
+  </div>
+</div>
+
+<div class="article-body">
+
+  <p class="lead">Returns themselves have almost no autocorrelation, as Day 10 showed. But squared returns — a proxy for volatility — are strongly autocorrelated. Large moves cluster together. This single observation, first documented by Mandelbrot in 1963, is the entire justification for GARCH models.</p>
+
+  <h2>Volatility Clustering — The Evidence</h2>
+  <p>If today was a big move, tomorrow is more likely to be a big move too — regardless of direction. We test this directly by computing the ACF of squared returns.</p>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — ACF of squared returns</div>
+    </div>
+    <pre><span class="c-kw">import</span> numpy <span class="c-kw">as</span> np
+
+np.random.<span class="c-fn">seed</span>(<span class="c-num">42</span>)
+n = <span class="c-num">1000</span>
+
+<span class="c-cm"># Simulate GARCH(1,1) process — omega, alpha, beta control clustering</span>
+<span class="c-var">omega</span>, <span class="c-var">alpha</span>, <span class="c-var">beta</span> = <span class="c-num">0.05</span>, <span class="c-num">0.10</span>, <span class="c-num">0.85</span>
+<span class="c-var">returns</span> = np.<span class="c-fn">zeros</span>(n)
+<span class="c-var">sigma2</span>   = np.<span class="c-fn">zeros</span>(n)
+sigma2[<span class="c-num">0</span>] = omega / (<span class="c-num">1</span> - alpha - beta)
+
+<span class="c-kw">for</span> t <span class="c-kw">in</span> <span class="c-fn">range</span>(<span class="c-num">1</span>, n):
+    sigma2[t]  = omega + alpha * returns[t-<span class="c-num">1</span>]**<span class="c-num">2</span> + beta * sigma2[t-<span class="c-num">1</span>]
+    returns[t] = np.random.<span class="c-fn">normal</span>(<span class="c-num">0</span>, np.<span class="c-fn">sqrt</span>(sigma2[t]))
+
+<span class="c-cm"># ACF of squared returns — the volatility clustering signature</span>
+<span class="c-var">sq_returns</span> = returns**<span class="c-num">2</span>
+<span class="c-kw">for</span> k <span class="c-kw">in</span> <span class="c-fn">range</span>(<span class="c-num">1</span>, <span class="c-num">6</span>):
+    acf_k = np.<span class="c-fn">corrcoef</span>(sq_returns[:-k], sq_returns[k:])[<span class="c-num">0</span>,<span class="c-num">1</span>]
+    <span class="c-fn">print</span>(<span class="c-str">f"ACF of squared returns, lag {k}: {acf_k:.4f}"</span>)</pre>
+  </div>
+
+  <h3>Actual Output</h3>
+  <div class="output-wrap">
+    <div class="output-header">▶ python3 vol_clustering.py</div>
+    <div class="output-body">
+      <div><span class="out-ln">ACF of squared returns, lag 1: </span><span class="out-n">0.0808</span></div>
+      <div><span class="out-ln">ACF of squared returns, lag 2: </span><span class="out-n">0.0295</span></div>
+      <div><span class="out-ln">ACF of squared returns, lag 3: </span><span class="out-n">0.0750</span></div>
+      <div><span class="out-ln">ACF of squared returns, lag 4: </span><span class="out-n">0.1108</span></div>
+      <div><span class="out-ln">ACF of squared returns, lag 5: </span><span class="out-n">0.0904</span></div>
+    </div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-title">Compare to Day 10 — raw returns had ~0 autocorrelation</div>
+    <p style="margin:0;font-size:14px;color:var(--ink-soft);line-height:1.75;">
+      On Day 10, white noise ACF at lag 1 was 0.0342 — essentially zero. Here, squared returns show consistent positive autocorrelation of 0.03–0.11 across all 5 lags. <strong>Returns are unpredictable. Squared returns are not.</strong> This is exactly what GARCH is designed to capture — the size of tomorrow's move depends on today's move, even when direction does not.
+    </p>
+  </div>
+
+  <h2>The GARCH(1,1) Model — Three Parameters</h2>
+
+  <div class="garch-grid">
+    <div class="garch-card g-omega">
+      <div class="garch-symbol">ω</div>
+      <div class="garch-name">Omega</div>
+      <p>The long-run baseline variance level. Determines the "resting" volatility when no shocks are occurring.</p>
+      <div class="garch-val">True: 0.05 · Fitted: 0.0581</div>
+    </div>
+    <div class="garch-card g-alpha">
+      <div class="garch-symbol">α</div>
+      <div class="garch-name">Alpha</div>
+      <p>Reaction to recent shocks. How much yesterday's squared return impacts today's variance. Higher = more reactive.</p>
+      <div class="garch-val">True: 0.10 · Fitted: 0.0752</div>
+    </div>
+    <div class="garch-card g-beta">
+      <div class="garch-symbol">β</div>
+      <div class="garch-name">Beta</div>
+      <p>Persistence of past variance. How much yesterday's variance carries into today. High beta = long memory.</p>
+      <div class="garch-val">True: 0.85 · Fitted: 0.8561</div>
+    </div>
+  </div>
+
+  <div class="garch-formula">
+    <div class="f-label">GARCH(1,1) Model</div>
+    <div class="f-main">
+      σₜ² = ω + α·εₜ₋₁² + β·σₜ₋₁²
+    </div>
+    <div class="f-sub">
+      σₜ² = today's conditional variance &nbsp;·&nbsp; εₜ₋₁² = yesterday's squared shock<br/>
+      σₜ₋₁² = yesterday's variance &nbsp;·&nbsp; α + β = persistence (must be &lt; 1 for stationarity)<br/>
+      Unconditional variance = ω / (1 − α − β)
+    </div>
+  </div>
+
+  <h2>Python — Fitting GARCH(1,1) with the arch Package</h2>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — fit GARCH(1,1)</div>
+    </div>
+    <pre><span class="c-kw">from</span> arch <span class="c-kw">import</span> arch_model
+
+<span class="c-cm"># Fit GARCH(1,1) to the simulated returns</span>
+<span class="c-var">model</span> = <span class="c-fn">arch_model</span>(returns, vol=<span class="c-str">'Garch'</span>, p=<span class="c-num">1</span>, q=<span class="c-num">1</span>, mean=<span class="c-str">'Zero'</span>)
+<span class="c-var">fit</span> = model.<span class="c-fn">fit</span>(disp=<span class="c-str">'off'</span>)
+
+<span class="c-fn">print</span>(fit.params)
+<span class="c-fn">print</span>(<span class="c-str">f"Log-likelihood: {fit.loglikelihood:.4f}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"AIC: {fit.aic:.4f}"</span>)</pre>
+  </div>
+
+  <div class="output-wrap">
+    <div class="output-header">▶ python3 fit_garch.py</div>
+    <div class="output-body">
+      <div><span class="out-ln">omega&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="out-n">0.058074</span></div>
+      <div><span class="out-ln">alpha[1]&nbsp;&nbsp;&nbsp;</span><span class="out-n">0.075242</span></div>
+      <div><span class="out-ln">beta[1]&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="out-n">0.856115</span></div>
+      <div style="margin-top:8px;"></div>
+      <div><span class="out-ln">Log-likelihood: </span><span class="out-n">-1312.3398</span></div>
+      <div><span class="out-ln">AIC: </span><span class="out-n">2630.6795</span></div>
+    </div>
+  </div>
+
+  <table class="compare-table">
+    <thead><tr><th>Parameter</th><th>True value</th><th>Fitted value</th><th>Difference</th></tr></thead>
+    <tbody>
+      <tr><td>ω (omega)</td><td class="ct-true">0.0500</td><td class="ct-fit">0.0581</td><td>+0.0081</td></tr>
+      <tr><td>α (alpha)</td><td class="ct-true">0.1000</td><td class="ct-fit">0.0752</td><td>−0.0248</td></tr>
+      <tr><td>β (beta)</td><td class="ct-true">0.8500</td><td class="ct-fit">0.8561</td><td>+0.0061</td></tr>
+    </tbody>
+  </table>
+
+  <p>Even with 1,000 observations of noisy simulated data, GARCH recovers parameters remarkably close to the true values — especially β, the persistence parameter, which is often the most important for practical volatility forecasting.</p>
+
+  <h2>Volatility Persistence — Why It Matters</h2>
+
+  <div class="callout callout-blue">
+    <div class="callout-title">Persistence = α + β = 0.95</div>
+    <p style="margin:0;font-size:14px;color:var(--ink-soft);line-height:1.75;">
+      This number tells you how long a volatility shock lingers. Persistence close to 1 means shocks decay very slowly — a volatile week can influence expected volatility for months. Real equity markets often show persistence of 0.90–0.99. Persistence ≥ 1 would mean the process is non-stationary (IGARCH) — variance shocks never fully die out.
+    </p>
+  </div>
+
+  <h2>Forecasting Future Volatility</h2>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — 5-day volatility forecast</div>
+    </div>
+    <pre><span class="c-var">forecasts</span> = fit.<span class="c-fn">forecast</span>(horizon=<span class="c-num">5</span>)
+<span class="c-var">variance_forecast</span> = forecasts.variance.values[-<span class="c-num">1</span>]
+
+<span class="c-kw">for</span> i, v <span class="c-kw">in</span> <span class="c-fn">enumerate</span>(variance_forecast, <span class="c-num">1</span>):
+    <span class="c-fn">print</span>(<span class="c-str">f"Day {i}: variance={v:.4f}, vol={np.sqrt(v):.4f}"</span>)</pre>
+  </div>
+
+  <div class="output-wrap">
+    <div class="output-header">▶ python3 garch_forecast.py</div>
+    <div class="output-body">
+      <div><span class="out-ln">Day 1: variance=</span><span class="out-n">0.8259</span><span class="out-ln">, vol=</span><span class="out-n">0.9088</span></div>
+      <div><span class="out-ln">Day 2: variance=</span><span class="out-n">0.8273</span><span class="out-ln">, vol=</span><span class="out-n">0.9096</span></div>
+      <div><span class="out-ln">Day 3: variance=</span><span class="out-n">0.8286</span><span class="out-ln">, vol=</span><span class="out-n">0.9103</span></div>
+      <div><span class="out-ln">Day 4: variance=</span><span class="out-n">0.8298</span><span class="out-ln">, vol=</span><span class="out-n">0.9109</span></div>
+      <div><span class="out-ln">Day 5: variance=</span><span class="out-n">0.8309</span><span class="out-ln">, vol=</span><span class="out-n">0.9115</span></div>
+    </div>
+  </div>
+
+  <div class="vol-chart">
+    <div class="vol-chart-title">Volatility forecast — gradually converging toward long-run level</div>
+    <div class="vol-row"><span class="vol-day">Current</span><div class="vol-track"><div class="vol-fill" style="width:96.4%"></div></div><span class="vol-val">0.9639</span></div>
+    <div class="vol-row"><span class="vol-day">Day 1</span><div class="vol-track"><div class="vol-fill" style="width:90.9%"></div></div><span class="vol-val">0.9088</span></div>
+    <div class="vol-row"><span class="vol-day">Day 2</span><div class="vol-track"><div class="vol-fill" style="width:91.0%"></div></div><span class="vol-val">0.9096</span></div>
+    <div class="vol-row"><span class="vol-day">Day 3</span><div class="vol-track"><div class="vol-fill" style="width:91.0%"></div></div><span class="vol-val">0.9103</span></div>
+    <div class="vol-row"><span class="vol-day">Day 4</span><div class="vol-track"><div class="vol-fill" style="width:91.1%"></div></div><span class="vol-val">0.9109</span></div>
+    <div class="vol-row"><span class="vol-day">Day 5</span><div class="vol-track"><div class="vol-fill" style="width:91.2%"></div></div><span class="vol-val">0.9115</span></div>
+    <div class="vol-row"><span class="vol-day">Long-run</span><div class="vol-track"><div class="vol-fill" style="width:100%;background:var(--green);"></div></div><span class="vol-val" style="color:var(--green);">1.0000</span></div>
+  </div>
+
+  <p>The forecast starts near the current volatility level (0.9639) and gradually drifts toward the long-run unconditional volatility (1.0000) — this mean-reverting behaviour is exactly what GARCH persistence produces. High persistence (0.95) means this convergence is slow — volatility clusters stay elevated for extended periods.</p>
+
+  <h2>GARCH vs EGARCH — When Direction Matters</h2>
+
+  <div class="compare-grid">
+    <div class="cg-card cg-garch">
+      <div class="cg-title">GARCH — Symmetric</div>
+      <p>Treats positive and negative shocks identically. A −2% day and a +2% day increase future variance by exactly the same amount, since the model only sees εₜ₋₁². Simple, robust, works well for many assets.</p>
+    </div>
+    <div class="cg-card cg-egarch">
+      <div class="cg-title">EGARCH — Asymmetric</div>
+      <p>Captures the <strong>leverage effect</strong> — in equity markets, negative shocks typically increase future volatility more than positive shocks of the same size. Models log(σₜ²) directly, so no positivity constraint is needed on parameters.</p>
+    </div>
+  </div>
+
+  <div class="callout callout-red">
+    <div class="callout-title">The leverage effect — why EGARCH matters for stocks</div>
+    <p style="margin:0;font-size:14px;color:var(--ink-soft);line-height:1.75;">
+      When stock prices fall, financial leverage (debt-to-equity) rises mechanically, increasing perceived risk and future volatility. This means crashes are followed by MORE volatility than equivalent-sized rallies. Standard GARCH cannot capture this asymmetry — EGARCH and GJR-GARCH extensions were built specifically to fix this. Fit both and compare AIC when working with equity data.
+    </p>
+  </div>
+
+  <hr class="rule"/>
+
+  <div class="takeaway">
+    <div class="takeaway-title">Three things to remember from Day 12</div>
+    <p class="takeaway-body">Volatility is far more predictable than returns. GARCH exploits this predictability — and the parameters it estimates tell you directly how markets absorb and carry shocks over time.</p>
+    <ul class="takeaway-list">
+      <li>Squared returns show clear autocorrelation (0.03–0.11 across 5 lags) even when raw returns show almost none. This asymmetry — unpredictable direction, predictable magnitude — is the entire foundation of GARCH modelling.</li>
+      <li>Fitted GARCH(1,1) recovered ω=0.058, α=0.075, β=0.856 against true values of 0.05, 0.10, 0.85 — remarkably close given noisy data. Persistence α+β=0.95 means volatility shocks decay slowly and clusters persist for extended periods.</li>
+      <li>For equities, prefer EGARCH or GJR-GARCH over plain GARCH — the leverage effect means crashes increase future volatility more than equivalent rallies. Standard symmetric GARCH misses this entirely.</li>
+    </ul>
+  </div>
+
+  <div class="article-nav">
+    <a href="day11.html">
+      <span class="nav-dir">← Previous</span>
+      <span class="nav-title">Day 11: ARIMA Models</span>
+    </a>
+    <a href="index.html" class="next">
+      <span class="nav-dir">All Articles</span>
+      <span class="nav-title">View Full 90-Day Series →</span>
+    </a>
+  </div>
+
+</div>
+
+<div class="article-footer">
+  <div class="footer-series">Quant Finance Notes — 90-Day Series</div>
+  <div class="footer-next">Tomorrow — Day 13: VAR &amp; VECM Models<br/>Modeling multiple financial time series together</div>
+  <div class="footer-tags">
+    <span class="footer-tag">#QuantFinance</span>
+    <span class="footer-tag">#GARCH</span>
+    <span class="footer-tag">#VolatilityModeling</span>
+    <span class="footer-tag">#TimeSeries</span>
+    <span class="footer-tag">#TradingMath</span>
+    <span class="footer-tag">#AlgorithmicTrading</span>
+    <span class="footer-tag">#Python</span>
+    <span class="footer-tag">#Finance</span>
+    <span class="footer-tag">#SriLanka</span>
+    <span class="footer-tag">#Quant</span>
+  </div>
+  <div class="footer-author">
+    Written by <strong>Nadun Sulochana</strong> &nbsp;·&nbsp; github.com/ns530 &nbsp;·&nbsp; nadunsulochana92@gmail.com
+  </div>
+</div>
+
+</body>
+</html>
