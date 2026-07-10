@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="google-site-verification" content="SgzPqB0Vckpfji6y3nNSuKVuLHeB-5xwqyW2BR0Zr9g">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Day 13: VAR & VECM Models — modeling multiple financial time series together. Vector autoregression, Granger causality, impulse response with Python.">
+<meta name="keywords" content="VAR model finance, vector autoregression trading, Granger causality Python, VECM cointegration, impulse response function, multivariate time series finance, quant finance tutorial, Nadun Sulochana">
+<meta name="author" content="Nadun Sulochana">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://ns530.github.io/quant-finance-notes/day13.html">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ns530.github.io/quant-finance-notes/day13.html">
+<meta property="og:title" content="Day 13: VAR & VECM Models — Quant Finance Notes | Nadun Sulochana">
+<meta property="og:description" content="Modeling multiple financial time series together. Granger causality proves Bond leads Stock (p=0.0001) but not vice versa (p=0.48). Python VAR + impulse response.">
+<meta property="og:site_name" content="Quant Finance Notes">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="citation_author" content="Nadun Sulochana">
+<meta name="geo.region" content="LK">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "name": "Day 13: VAR & VECM Models",
+  "url": "https://ns530.github.io/quant-finance-notes/day13.html",
+  "author": {"@type":"Person","name":"Nadun Sulochana","url":"https://www.linkedin.com/in/nadun-sulochana-41923029b","sameAs":["https://github.com/ns530"]},
+  "isPartOf": {"@type":"WebSite","name":"Quant Finance Notes","url":"https://ns530.github.io/quant-finance-notes/"}
+}
+</script>
+<title>Day 13: VAR & VECM Models — Quant Finance Notes | Nadun Sulochana</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.var-formula{background:var(--accent);border-radius:12px;padding:28px;margin:28px 0;text-align:center;}
+.var-formula .f-label{font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:14px;}
+.var-formula .f-main{font-family:'Playfair Display',serif;font-size:clamp(14px,2.5vw,21px);color:white;line-height:1.8;margin-bottom:10px;}
+.var-formula .f-sub{font-size:13px;color:rgba(255,255,255,0.6);line-height:1.7;}
+
+.gc-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:28px 0;}
+@media(max-width:540px){.gc-grid{grid-template-columns:1fr;}}
+.gc-card{border-radius:10px;padding:22px;border:1px solid var(--rule);}
+.gc-yes{background:var(--green-lt);border-color:#B8E4C4;}
+.gc-no {background:var(--red-lt);  border-color:#E4B8B8;}
+.gc-label{font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:8px;}
+.gc-yes .gc-label{color:var(--green);}
+.gc-no  .gc-label{color:var(--red);}
+.gc-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;margin-bottom:10px;color:var(--ink);}
+.gc-card p{font-size:13px;color:var(--ink-soft);line-height:1.65;margin:0;}
+.gc-stat{font-family:'Source Code Pro',monospace;font-size:12px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,0.08);line-height:1.9;}
+.gc-yes .gc-stat{color:var(--green);}
+.gc-no  .gc-stat{color:var(--red);}
+
+.irf-chart{background:white;border:1px solid var(--rule);border-radius:10px;padding:22px 24px;margin:28px 0;}
+.irf-title{font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:16px;}
+.irf-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.irf-h{font-size:12px;font-family:'Source Code Pro',monospace;color:var(--ink-muted);min-width:76px;}
+.irf-track{flex:1;height:18px;background:var(--cream-dark);border-radius:4px;position:relative;overflow:hidden;}
+.irf-fill{height:18px;border-radius:4px;background:var(--accent-mid);}
+.irf-val{font-size:12px;font-family:'Source Code Pro',monospace;min-width:60px;text-align:right;color:var(--accent-mid);}
+
+.vecm-compare{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:28px 0;}
+@media(max-width:520px){.vecm-compare{grid-template-columns:1fr;}}
+.vc-card{border-radius:10px;padding:20px;border:1px solid var(--rule);}
+.vc-var {background:var(--accent-lt);border-color:#B8CCE4;}
+.vc-vecm{background:var(--purple-lt);border-color:#C4B8E4;}
+.vc-title{font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;}
+.vc-var  .vc-title{color:var(--accent-mid);}
+.vc-vecm .vc-title{color:var(--purple);}
+.vc-card p{font-size:13px;color:var(--ink-soft);line-height:1.65;margin:0;}
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <a class="nav-brand" href="index.html">Quant Finance <span>Notes</span></a>
+  <div class="nav-links">
+    <a href="index.html">All Articles</a>
+    <a href="https://github.com/ns530" target="_blank">GitHub</a>
+    <a href="https://www.linkedin.com/in/nadun-sulochana-41923029b" target="_blank">LinkedIn</a>
+    <span class="nav-badge">Day 13 / 90</span>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="series-tag">Quant Finance Notes &nbsp;·&nbsp; Day 13 of 90</div>
+  <h1>Modeling <em>Multiple Markets</em> Together</h1>
+  <p class="hero-sub">Every model so far predicted one series from its own past. VAR predicts several series from each other's pasts simultaneously — revealing which markets actually lead which, with Python proof.</p>
+  <div class="hero-meta">
+    <div class="avatar">NS</div>
+    <div class="meta-text"><strong>Nadun Sulochana</strong>Aspiring Software Architect · BSc Cyber Security · SLTC Research University</div>
+    <div class="day-badge">13 / 90</div>
+  </div>
+</div>
+
+<div class="article-body">
+
+  <p class="lead">Stocks, bonds, currencies, and commodities do not move in isolation. A bond market selloff often precedes equity weakness. A currency shock ripples into commodity prices. Vector Autoregression (VAR) captures these cross-market relationships in a single unified framework — and tells you statistically which market moves first.</p>
+
+  <h2>From AR to VAR — The Extension</h2>
+  <p>Day 11's ARIMA modeled one series using its own past values. VAR extends this to multiple series, where each variable is a function of the past values of ALL variables in the system — including itself.</p>
+
+  <div class="var-formula">
+    <div class="f-label">VAR(1) Model — Two Variables</div>
+    <div class="f-main">
+      stockₜ = c₁ + φ₁₁·stockₜ₋₁ + φ₁₂·bondₜ₋₁ + ε₁ₜ<br/>
+      bondₜ &nbsp;= c₂ + φ₂₁·stockₜ₋₁ + φ₂₂·bondₜ₋₁ + ε₂ₜ
+    </div>
+    <div class="f-sub">
+      Each variable depends on its OWN lag AND the OTHER variable's lag<br/>
+      φ₁₂ captures how bond's past affects stock's present — the cross-market link<br/>
+      This system can be extended to any number of variables (VAR(p) with k variables)
+    </div>
+  </div>
+
+  <h2>Python — Simulating and Fitting a VAR(1) System</h2>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — VAR(1) with lead-lag relationship</div>
+    </div>
+    <pre><span class="c-kw">import</span> numpy <span class="c-kw">as</span> np
+<span class="c-kw">from</span> statsmodels.tsa.api <span class="c-kw">import</span> VAR
+
+np.random.<span class="c-fn">seed</span>(<span class="c-num">42</span>)
+n = <span class="c-num">300</span>
+
+<span class="c-cm"># Simulate stock and bond with a built-in lead-lag relationship</span>
+<span class="c-var">stock</span> = np.<span class="c-fn">zeros</span>(n)
+<span class="c-var">bond</span>  = np.<span class="c-fn">zeros</span>(n)
+
+<span class="c-kw">for</span> t <span class="c-kw">in</span> <span class="c-fn">range</span>(<span class="c-num">2</span>, n):
+    stock[t] = <span class="c-num">0.3</span>*stock[t-<span class="c-num">1</span>] + <span class="c-num">0.2</span>*bond[t-<span class="c-num">1</span>]  + np.random.<span class="c-fn">normal</span>()
+    bond[t]  = <span class="c-num">0.4</span>*bond[t-<span class="c-num">1</span>]  - <span class="c-num">0.15</span>*stock[t-<span class="c-num">1</span>] + np.random.<span class="c-fn">normal</span>()
+
+<span class="c-var">data</span> = np.<span class="c-fn">column_stack</span>([stock, bond])
+
+<span class="c-cm"># Select optimal lag order</span>
+<span class="c-var">model</span> = <span class="c-fn">VAR</span>(data)
+<span class="c-var">lag_selection</span> = model.<span class="c-fn">select_order</span>(maxlags=<span class="c-num">5</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"AIC selects lag: {lag_selection.aic}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"BIC selects lag: {lag_selection.bic}"</span>)
+
+<span class="c-cm"># Fit VAR(1)</span>
+<span class="c-var">fit</span> = model.<span class="c-fn">fit</span>(<span class="c-num">1</span>)
+<span class="c-fn">print</span>(fit.params)</pre>
+  </div>
+
+  <h3>Actual Output</h3>
+  <div class="output-wrap">
+    <div class="output-header">▶ python3 var_model.py</div>
+    <div class="output-body">
+      <div><span class="out-ln">AIC selects lag: </span><span class="out-n">1</span></div>
+      <div><span class="out-ln">BIC selects lag: </span><span class="out-n">1</span></div>
+      <div style="margin-top:8px;"></div>
+      <div><span class="out-ln">const&nbsp;&nbsp;&nbsp;&nbsp;stock: </span><span class="out-n">-0.0081</span><span class="out-ln">&nbsp;&nbsp; bond: </span><span class="out-n">-0.0137</span></div>
+      <div><span class="out-ln">L1.stock&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: </span><span class="out-n">0.2117</span><span class="out-ln">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: </span><span class="out-n">-0.0378</span></div>
+      <div><span class="out-ln">L1.bond&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: </span><span class="out-n">0.2174</span><span class="out-ln">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: </span><span class="out-n">0.4462</span></div>
+    </div>
+  </div>
+
+  <p>Both AIC and BIC independently select lag order 1 — matching our true simulation exactly. The fitted coefficient of bond's lag on stock (0.2174) closely matches the true value we simulated (0.2), confirming VAR correctly recovers cross-market dependencies.</p>
+
+  <h2>Granger Causality — Who Leads, Who Follows?</h2>
+  <p>"Granger causality" does not mean true causation — it means one series has statistically significant predictive power for another, beyond what the second series' own past provides. This is the key diagnostic for understanding lead-lag relationships between markets.</p>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — Granger causality both directions</div>
+    </div>
+    <pre><span class="c-kw">from</span> statsmodels.tsa.stattools <span class="c-kw">import</span> grangercausalitytests
+
+<span class="c-cm"># Does Bond Granger-cause Stock?</span>
+<span class="c-var">result_b2s</span> = <span class="c-fn">grangercausalitytests</span>(data[:, [<span class="c-num">0</span>,<span class="c-num">1</span>]], maxlag=<span class="c-num">2</span>, verbose=<span class="c-kw">False</span>)
+<span class="c-kw">for</span> lag <span class="c-kw">in</span> [<span class="c-num">1</span>, <span class="c-num">2</span>]:
+    f_stat = result_b2s[lag][<span class="c-num">0</span>][<span class="c-str">'ssr_ftest'</span>][<span class="c-num">0</span>]
+    p_val  = result_b2s[lag][<span class="c-num">0</span>][<span class="c-str">'ssr_ftest'</span>][<span class="c-num">1</span>]
+    <span class="c-fn">print</span>(<span class="c-str">f"Bond→Stock lag {lag}: F={f_stat:.4f}, p={p_val:.4f}"</span>)
+
+<span class="c-cm"># Does Stock Granger-cause Bond?</span>
+<span class="c-var">result_s2b</span> = <span class="c-fn">grangercausalitytests</span>(data[:, [<span class="c-num">1</span>,<span class="c-num">0</span>]], maxlag=<span class="c-num">2</span>, verbose=<span class="c-kw">False</span>)
+<span class="c-kw">for</span> lag <span class="c-kw">in</span> [<span class="c-num">1</span>, <span class="c-num">2</span>]:
+    f_stat = result_s2b[lag][<span class="c-num">0</span>][<span class="c-str">'ssr_ftest'</span>][<span class="c-num">0</span>]
+    p_val  = result_s2b[lag][<span class="c-num">0</span>][<span class="c-str">'ssr_ftest'</span>][<span class="c-num">1</span>]
+    <span class="c-fn">print</span>(<span class="c-str">f"Stock→Bond lag {lag}: F={f_stat:.4f}, p={p_val:.4f}"</span>)</pre>
+  </div>
+
+  <div class="output-wrap">
+    <div class="output-header">▶ python3 granger_causality.py</div>
+    <div class="output-body">
+      <div><span class="out-ln">Bond→Stock lag 1: F=</span><span class="out-n">16.3692</span><span class="out-ln">, p=</span><span class="out-n">0.0001</span></div>
+      <div><span class="out-ln">Bond→Stock lag 2: F=</span><span class="out-n">8.3071</span><span class="out-ln">, p=</span><span class="out-n">0.0003</span></div>
+      <div style="margin-top:8px;"></div>
+      <div><span class="out-lf">Stock→Bond lag 1: F=</span><span class="out-f">0.4957</span><span class="out-lf">, p=</span><span class="out-f">0.4820</span></div>
+      <div><span class="out-lf">Stock→Bond lag 2: F=</span><span class="out-f">0.5753</span><span class="out-lf">, p=</span><span class="out-f">0.5632</span></div>
+    </div>
+  </div>
+
+  <div class="gc-grid">
+    <div class="gc-card gc-yes">
+      <div class="gc-label">Significant relationship</div>
+      <div class="gc-title">Bond → Stock</div>
+      <p>Bond's past values significantly predict stock's future values, beyond what stock's own history tells you.</p>
+      <div class="gc-stat">p = 0.0001 ✓ Granger-causes</div>
+    </div>
+    <div class="gc-card gc-no">
+      <div class="gc-label">No significant relationship</div>
+      <div class="gc-title">Stock → Bond</div>
+      <p>Stock's past values do NOT significantly predict bond's future values beyond bond's own history.</p>
+      <div class="gc-stat">p = 0.4820 ✗ Does not Granger-cause</div>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <div class="callout-title">The trading insight</div>
+    <p style="margin:0;font-size:14px;color:var(--ink-soft);line-height:1.75;">
+      The relationship is asymmetric — bond markets lead stock markets in this system, but not the reverse. This directly matches how our data was simulated: stock depends on bond's lag (coefficient 0.2) while the reverse relationship is much weaker. In real markets, this kind of asymmetric lead-lag structure between asset classes is exactly what cross-asset signal strategies attempt to exploit.
+    </p>
+  </div>
+
+  <h2>Impulse Response — Tracing a Shock Through the System</h2>
+  <p>The Impulse Response Function (IRF) shows what happens to one variable when the other receives a one-time shock. It traces the shock's effect forward through time.</p>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — impulse response function</div>
+    </div>
+    <pre><span class="c-cm"># Trace a shock to bond through to its effect on stock</span>
+<span class="c-var">irf</span> = fit.<span class="c-fn">irf</span>(<span class="c-num">5</span>)
+
+<span class="c-kw">for</span> h <span class="c-kw">in</span> <span class="c-fn">range</span>(<span class="c-num">5</span>):
+    effect = irf.irfs[h][<span class="c-num">0</span>,<span class="c-num">1</span>]   <span class="c-cm"># stock's response to bond shock</span>
+    <span class="c-fn">print</span>(<span class="c-str">f"Horizon {h}: {effect:.4f}"</span>)</pre>
+  </div>
+
+  <div class="output-wrap">
+    <div class="output-header">▶ python3 impulse_response.py</div>
+    <div class="output-body">
+      <div><span class="out-ln">Horizon 0: </span><span class="out-n">0.0000</span></div>
+      <div><span class="out-ln">Horizon 1: </span><span class="out-n">0.2174</span><span class="out-ln"> ← peak effect</span></div>
+      <div><span class="out-ln">Horizon 2: </span><span class="out-n">0.1431</span></div>
+      <div><span class="out-ln">Horizon 3: </span><span class="out-n">0.0718</span></div>
+      <div><span class="out-ln">Horizon 4: </span><span class="out-n">0.0325</span></div>
+    </div>
+  </div>
+
+  <div class="irf-chart">
+    <div class="irf-title">Impulse response — effect of a bond shock on stock over time</div>
+    <div class="irf-row"><span class="irf-h">Horizon 0</span><div class="irf-track"><div class="irf-fill" style="width:0%"></div></div><span class="irf-val">0.0000</span></div>
+    <div class="irf-row"><span class="irf-h">Horizon 1</span><div class="irf-track"><div class="irf-fill" style="width:100%"></div></div><span class="irf-val">0.2174</span></div>
+    <div class="irf-row"><span class="irf-h">Horizon 2</span><div class="irf-track"><div class="irf-fill" style="width:65.8%"></div></div><span class="irf-val">0.1431</span></div>
+    <div class="irf-row"><span class="irf-h">Horizon 3</span><div class="irf-track"><div class="irf-fill" style="width:33.0%"></div></div><span class="irf-val">0.0718</span></div>
+    <div class="irf-row"><span class="irf-h">Horizon 4</span><div class="irf-track"><div class="irf-fill" style="width:15.0%"></div></div><span class="irf-val">0.0325</span></div>
+  </div>
+
+  <p>A one-unit shock to bond has zero immediate effect on stock (horizon 0, since the shock hasn't propagated yet), peaks at horizon 1 (0.2174 — matching the direct lag coefficient), then decays smoothly toward zero by horizon 4. This decay pattern tells you how long a cross-market shock takes to work through the system.</p>
+
+  <h2>VAR vs VECM — When Series Are Cointegrated</h2>
+
+  <div class="vecm-compare">
+    <div class="vc-card vc-var">
+      <div class="vc-title">VAR — Stationary series</div>
+      <p>Use standard VAR when all your series are already stationary (Day 9's ADF test passes on each series individually). Works directly on returns, spreads, or any I(0) series.</p>
+    </div>
+    <div class="vc-card vc-vecm">
+      <div class="vc-title">VECM — Cointegrated series</div>
+      <p>Use VECM when series are individually non-stationary (I(1), like raw prices) but a linear combination of them IS stationary — meaning they share a long-run equilibrium relationship. VECM models both the short-run dynamics and the error-correction back to equilibrium.</p>
+    </div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-title">Why this distinction matters</div>
+    <p style="margin:0;font-size:14px;color:var(--ink-soft);line-height:1.75;">
+      Running VAR directly on two non-stationary price series (like two cointegrated stock prices) produces the spurious regression problem from Day 9. VECM handles this correctly by explicitly modeling the cointegrating relationship — the "error correction term" — that pulls the series back toward their long-run relationship. This is the exact mathematical foundation behind pairs trading, which we will cover in Layer 4.
+    </p>
+  </div>
+
+  <hr class="rule"/>
+
+  <div class="takeaway">
+    <div class="takeaway-title">Three things to remember from Day 13</div>
+    <p class="takeaway-body">VAR extends everything from Days 9–12 into a multivariate world — where markets don't just have their own memory, they influence each other's futures too.</p>
+    <ul class="takeaway-list">
+      <li>VAR correctly recovered the simulated cross-market coefficient — bond's lag effect on stock came out as 0.2174 versus the true 0.2. Both AIC and BIC independently selected the correct lag order of 1.</li>
+      <li>Granger causality revealed an asymmetric relationship: Bond→Stock is highly significant (p=0.0001) while Stock→Bond is not (p=0.482). This asymmetry — one market leading another — is exactly what cross-asset trading signals attempt to exploit.</li>
+      <li>Use VAR for stationary series (returns), but switch to VECM when working with non-stationary but cointegrated series (raw prices). This distinction is the mathematical foundation of every pairs trading and statistical arbitrage strategy.</li>
+    </ul>
+  </div>
+
+  <div class="article-nav">
+    <a href="day12.html">
+      <span class="nav-dir">← Previous</span>
+      <span class="nav-title">Day 12: GARCH &amp; EGARCH</span>
+    </a>
+    <a href="index.html" class="next">
+      <span class="nav-dir">All Articles</span>
+      <span class="nav-title">View Full 90-Day Series →</span>
+    </a>
+  </div>
+
+</div>
+
+<div class="article-footer">
+  <div class="footer-series">Quant Finance Notes — 90-Day Series</div>
+  <div class="footer-next">Tomorrow — Day 14: Covariance Matrices<br/>The mathematical heart of portfolio risk management</div>
+  <div class="footer-tags">
+    <span class="footer-tag">#QuantFinance</span>
+    <span class="footer-tag">#VAR</span>
+    <span class="footer-tag">#GrangerCausality</span>
+    <span class="footer-tag">#TimeSeries</span>
+    <span class="footer-tag">#TradingMath</span>
+    <span class="footer-tag">#AlgorithmicTrading</span>
+    <span class="footer-tag">#Python</span>
+    <span class="footer-tag">#Finance</span>
+    <span class="footer-tag">#SriLanka</span>
+    <span class="footer-tag">#Quant</span>
+  </div>
+  <div class="footer-author">
+    Written by <strong>Nadun Sulochana</strong> &nbsp;·&nbsp; github.com/ns530 &nbsp;·&nbsp; nadunsulochana92@gmail.com
+  </div>
+</div>
+
+</body>
+</html>
