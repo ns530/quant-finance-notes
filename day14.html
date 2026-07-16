@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="google-site-verification" content="SgzPqB0Vckpfji6y3nNSuKVuLHeB-5xwqyW2BR0Zr9g">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Day 14: Covariance Matrices — the mathematical heart of portfolio risk management. Portfolio variance, diversification, positive semi-definiteness, shrinkage estimators with Python.">
+<meta name="keywords" content="covariance matrix finance, portfolio risk Python, correlation matrix trading, diversification math, positive semi-definite matrix, shrinkage estimator, quant finance tutorial, Nadun Sulochana">
+<meta name="author" content="Nadun Sulochana">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://ns530.github.io/quant-finance-notes/day14.html">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ns530.github.io/quant-finance-notes/day14.html">
+<meta property="og:title" content="Day 14: Covariance Matrices — Quant Finance Notes | Nadun Sulochana">
+<meta property="og:description" content="The mathematical heart of portfolio risk. Positive correlation adds 27.9% risk, negative correlation cuts 7.6% risk. Python covariance, PSD check, shrinkage.">
+<meta property="og:site_name" content="Quant Finance Notes">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="citation_author" content="Nadun Sulochana">
+<meta name="geo.region" content="LK">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "name": "Day 14: Covariance Matrices",
+  "url": "https://ns530.github.io/quant-finance-notes/day14.html",
+  "author": {"@type":"Person","name":"Nadun Sulochana","url":"https://www.linkedin.com/in/nadun-sulochana-41923029b","sameAs":["https://github.com/ns530"]},
+  "isPartOf": {"@type":"WebSite","name":"Quant Finance Notes","url":"https://ns530.github.io/quant-finance-notes/"}
+}
+</script>
+<title>Day 14: Covariance Matrices — Quant Finance Notes | Nadun Sulochana</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.matrix-display{background:#0F1923;border-radius:10px;padding:24px;margin:24px 0;overflow-x:auto;}
+.matrix-table{border-collapse:collapse;margin:0 auto;font-family:'Source Code Pro',monospace;font-size:13px;}
+.matrix-table td{padding:8px 16px;text-align:center;color:#CDD9E5;}
+.matrix-table td.diag{color:#80D080;font-weight:600;}
+.matrix-table td.pos{color:#6CB6FF;}
+.matrix-table td.neg{color:#E08080;}
+.matrix-label{text-align:center;font-size:11px;color:#768390;margin-bottom:8px;font-family:'DM Sans',sans-serif;letter-spacing:0.08em;text-transform:uppercase;}
+
+.div-compare{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:28px 0;}
+@media(max-width:540px){.div-compare{grid-template-columns:1fr;}}
+.dc-card{border-radius:10px;padding:22px;border:1px solid var(--rule);text-align:center;}
+.dc-bad {background:var(--red-lt);  border-color:#E4B8B8;}
+.dc-good{background:var(--green-lt);border-color:#B8E4C4;}
+.dc-label{font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:8px;}
+.dc-bad  .dc-label{color:var(--red);}
+.dc-good .dc-label{color:var(--green);}
+.dc-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;margin-bottom:10px;color:var(--ink);}
+.dc-card p{font-size:13px;color:var(--ink-soft);line-height:1.6;margin:0 0 10px;}
+.dc-result{font-family:'Source Code Pro',monospace;font-size:14px;font-weight:700;padding-top:10px;border-top:1px solid rgba(0,0,0,0.08);}
+.dc-bad  .dc-result{color:var(--red);}
+.dc-good .dc-result{color:var(--green);}
+
+.var-formula{background:var(--accent);border-radius:12px;padding:28px;margin:28px 0;text-align:center;}
+.var-formula .f-label{font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:14px;}
+.var-formula .f-main{font-family:'Playfair Display',serif;font-size:clamp(16px,3vw,24px);color:white;line-height:1.75;margin-bottom:10px;}
+.var-formula .f-sub{font-size:13px;color:rgba(255,255,255,0.6);line-height:1.7;}
+
+.eigen-chart{background:white;border:1px solid var(--rule);border-radius:10px;padding:22px 24px;margin:28px 0;}
+.eigen-title{font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:16px;}
+.eigen-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.eigen-label{font-size:12px;font-family:'Source Code Pro',monospace;color:var(--ink-muted);min-width:70px;}
+.eigen-track{flex:1;height:18px;background:var(--cream-dark);border-radius:4px;position:relative;overflow:hidden;}
+.eigen-fill{height:18px;border-radius:4px;background:var(--green);}
+.eigen-val{font-size:12px;font-family:'Source Code Pro',monospace;min-width:60px;text-align:right;color:var(--green);}
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <a class="nav-brand" href="index.html">Quant Finance <span>Notes</span></a>
+  <div class="nav-links">
+    <a href="index.html">All Articles</a>
+    <a href="https://github.com/ns530" target="_blank">GitHub</a>
+    <a href="https://www.linkedin.com/in/nadun-sulochana-41923029b" target="_blank">LinkedIn</a>
+    <span class="nav-badge">Day 14 / 90</span>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="series-tag">Quant Finance Notes &nbsp;·&nbsp; Day 14 of 90</div>
+  <h1>The Mathematical Heart of <em>Portfolio Risk</em></h1>
+  <p class="hero-sub">A portfolio's risk is not the sum of its parts — it depends entirely on how those parts move together. The covariance matrix is the single object that captures this, and every portfolio optimization technique is built on top of it.</p>
+  <div class="hero-meta">
+    <div class="avatar">NS</div>
+    <div class="meta-text"><strong>Nadun Sulochana</strong>Aspiring Software Architect · BSc Cyber Security · SLTC Research University</div>
+    <div class="day-badge">14 / 90</div>
+  </div>
+</div>
+
+<div class="article-body">
+
+  <p class="lead">Two assets with identical individual volatility can produce wildly different portfolio risk depending on whether they move together or apart. The covariance matrix captures every pairwise relationship in your portfolio simultaneously — it is the object that makes modern portfolio theory possible.</p>
+
+  <h2>Building a Covariance Matrix — 4 Assets</h2>
+  <p>We simulate 4 assets with a known true correlation structure, then estimate the covariance matrix from 252 days of simulated returns.</p>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — simulate correlated assets</div>
+    </div>
+    <pre><span class="c-kw">import</span> numpy <span class="c-kw">as</span> np
+
+np.random.<span class="c-fn">seed</span>(<span class="c-num">42</span>)
+n = <span class="c-num">252</span>
+
+<span class="c-cm"># True correlation structure — Stock A, Stock B, Commodity, Bond</span>
+<span class="c-var">true_corr</span> = np.<span class="c-fn">array</span>([
+    [<span class="c-num">1.00</span>,  <span class="c-num">0.65</span>,  <span class="c-num">0.30</span>, <span class="c-num">-0.20</span>],
+    [<span class="c-num">0.65</span>,  <span class="c-num">1.00</span>,  <span class="c-num">0.45</span>, <span class="c-num">-0.15</span>],
+    [<span class="c-num">0.30</span>,  <span class="c-num">0.45</span>,  <span class="c-num">1.00</span>,  <span class="c-num">0.10</span>],
+    [<span class="c-num">-0.20</span>, <span class="c-num">-0.15</span>, <span class="c-num">0.10</span>,  <span class="c-num">1.00</span>],
+])
+<span class="c-var">true_vols</span> = np.<span class="c-fn">array</span>([<span class="c-num">1.5</span>, <span class="c-num">1.2</span>, <span class="c-num">2.0</span>, <span class="c-num">0.8</span>])  <span class="c-cm"># daily vol %</span>
+
+<span class="c-cm"># Covariance = outer product of vols × correlation</span>
+<span class="c-var">true_cov</span> = np.<span class="c-fn">outer</span>(true_vols, true_vols) * true_corr
+
+<span class="c-cm"># Generate correlated returns via Cholesky decomposition</span>
+<span class="c-var">L</span> = np.linalg.<span class="c-fn">cholesky</span>(true_cov)
+<span class="c-var">returns</span> = (L @ np.random.<span class="c-fn">normal</span>(<span class="c-num">0</span>, <span class="c-num">1</span>, (<span class="c-num">4</span>, n))).T
+
+<span class="c-cm"># Estimate covariance from the sample</span>
+<span class="c-var">sample_cov</span>  = np.<span class="c-fn">cov</span>(returns.T)
+<span class="c-var">sample_corr</span> = np.<span class="c-fn">corrcoef</span>(returns.T)</pre>
+  </div>
+
+  <h3>Actual Output — Sample Correlation Matrix</h3>
+  <div class="matrix-display">
+    <div class="matrix-label">Sample correlation (estimated from 252 observations)</div>
+    <table class="matrix-table">
+      <tr><td class="diag">1.0000</td><td class="pos">0.6466</td><td class="pos">0.3847</td><td class="neg">-0.1782</td></tr>
+      <tr><td class="pos">0.6466</td><td class="diag">1.0000</td><td class="pos">0.4373</td><td class="neg">-0.1412</td></tr>
+      <tr><td class="pos">0.3847</td><td class="pos">0.4373</td><td class="diag">1.0000</td><td class="pos">0.1193</td></tr>
+      <tr><td class="neg">-0.1782</td><td class="neg">-0.1412</td><td class="pos">0.1193</td><td class="diag">1.0000</td></tr>
+    </table>
+  </div>
+
+  <p>The sample correlation matrix closely recovers the true underlying structure: Stock A and Stock B show strong positive correlation (0.647 vs true 0.65), while Bond shows negative correlation with both stocks (−0.178 and −0.141) — exactly matching the diversifying relationship we simulated.</p>
+
+  <h2>Portfolio Variance — The Formula That Changes Everything</h2>
+
+  <div class="var-formula">
+    <div class="f-label">Portfolio Variance Formula</div>
+    <div class="f-main">
+      σₚ² = wᵀ Σ w
+    </div>
+    <div class="f-sub">
+      w = vector of portfolio weights &nbsp;·&nbsp; Σ = covariance matrix<br/>
+      This single matrix expression captures every asset's individual variance AND every pairwise covariance simultaneously<br/>
+      Expand for 2 assets: σₚ² = w₁²σ₁² + w₂²σ₂² + 2w₁w₂σ₁σ₂ρ₁₂
+    </div>
+  </div>
+
+  <h2>Correlation Changes Everything — Two Direct Comparisons</h2>
+  <p>Same individual volatilities. Same 50/50 weights. Only the correlation differs. Watch what happens to portfolio risk.</p>
+
+  <div class="div-compare">
+    <div class="dc-card dc-bad">
+      <div class="dc-label">High positive correlation</div>
+      <div class="dc-title">Stock A + Stock B (ρ=0.65)</div>
+      <p>Both assets tend to move together. When one falls, the other usually falls too. Diversification barely helps here.</p>
+      <div class="dc-result">Correlation ADDS 27.9% risk</div>
+    </div>
+    <div class="dc-card dc-good">
+      <div class="dc-label">Negative correlation</div>
+      <div class="dc-title">Stock A + Bond (ρ=−0.20)</div>
+      <p>When stock falls, bond tends to rise slightly. This offsetting behaviour is genuine diversification — it directly reduces portfolio risk.</p>
+      <div class="dc-result">Correlation CUTS 7.6% risk</div>
+    </div>
+  </div>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — correlation's effect on portfolio risk</div>
+    </div>
+    <pre><span class="c-var">w2</span> = np.<span class="c-fn">array</span>([<span class="c-num">0.5</span>, <span class="c-num">0.5</span>])
+
+<span class="c-cm"># Stock A + Stock B (positively correlated)</span>
+<span class="c-var">cov_AB</span>   = sample_cov[:<span class="c-num">2</span>,:<span class="c-num">2</span>]
+<span class="c-var">var_AB</span>   = w2 @ cov_AB @ w2
+<span class="c-var">naive_AB</span> = np.<span class="c-fn">sum</span>((w2 * np.<span class="c-fn">sqrt</span>(np.<span class="c-fn">diag</span>(cov_AB)))**<span class="c-num">2</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Actual vol: {np.sqrt(var_AB):.4f}  vs  If uncorrelated: {np.sqrt(naive_AB):.4f}"</span>)
+
+<span class="c-cm"># Stock A + Bond (negatively correlated)</span>
+<span class="c-var">cov_ABond</span>   = sample_cov[[<span class="c-num">0</span>,<span class="c-num">3</span>]][:,[<span class="c-num">0</span>,<span class="c-num">3</span>]]
+<span class="c-var">var_ABond</span>   = w2 @ cov_ABond @ w2
+<span class="c-var">naive_ABond</span> = np.<span class="c-fn">sum</span>((w2 * np.<span class="c-fn">sqrt</span>(np.<span class="c-fn">diag</span>(cov_ABond)))**<span class="c-num">2</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"Actual vol: {np.sqrt(var_ABond):.4f}  vs  If uncorrelated: {np.sqrt(naive_ABond):.4f}"</span>)</pre>
+  </div>
+
+  <div class="output-wrap">
+    <div class="output-header">▶ python3 correlation_effect.py</div>
+    <div class="output-body">
+      <div><span class="out-ln">Stock A + Stock B (ρ=0.65):</span></div>
+      <div><span class="out-lf">Actual vol: 1.2029&nbsp;&nbsp;vs&nbsp;&nbsp;If uncorrelated: 0.9408</span></div>
+      <div><span class="out-lf">→ Correlation ADDS 27.9% risk</span></div>
+      <div style="margin-top:8px;"></div>
+      <div><span class="out-ln">Stock A + Bond (ρ=-0.20):</span></div>
+      <div><span class="out-n">Actual vol: 0.7550&nbsp;&nbsp;vs&nbsp;&nbsp;If uncorrelated: 0.8167</span></div>
+      <div><span class="out-n">→ Correlation CUTS 7.6% risk</span></div>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <div class="callout-title">The core lesson of portfolio theory</div>
+    <p style="margin:0;font-size:14px;color:var(--ink-soft);line-height:1.75;">
+      Adding a highly correlated asset to your portfolio does NOT diversify — it concentrates risk, adding 27.9% more volatility than the uncorrelated case would suggest. Adding a negatively correlated asset genuinely reduces risk. This is why "24 stocks in tech" is not diversification, but "8 stocks across tech, bonds, and commodities" can be — even with fewer holdings.
+    </p>
+  </div>
+
+  <h2>Positive Semi-Definiteness — The Hidden Requirement</h2>
+  <p>Not every matrix of numbers can be a valid covariance matrix. A real covariance matrix must be positive semi-definite (PSD) — meaning all its eigenvalues must be non-negative. This is not a technicality; it guarantees that no portfolio can have negative variance, which would be mathematically nonsensical.</p>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — checking positive semi-definiteness</div>
+    </div>
+    <pre><span class="c-cm"># Eigenvalues must all be >= 0 for a valid covariance matrix</span>
+<span class="c-var">eigvals</span> = np.linalg.<span class="c-fn">eigvalsh</span>(sample_cov)
+<span class="c-fn">print</span>(<span class="c-str">f"Eigenvalues: {eigvals}"</span>)
+<span class="c-fn">print</span>(<span class="c-str">f"All non-negative (PSD): {all(eigvals >= -1e-10)}"</span>)</pre>
+  </div>
+
+  <div class="output-wrap">
+    <div class="output-header">▶ python3 psd_check.py</div>
+    <div class="output-body">
+      <div><span class="out-ln">Eigenvalues: [</span><span class="out-n">0.4995</span><span class="out-ln">, </span><span class="out-n">0.5861</span><span class="out-ln">, </span><span class="out-n">1.9199</span><span class="out-ln">, </span><span class="out-n">5.0245</span><span class="out-ln">]</span></div>
+      <div><span class="out-ln">All non-negative (PSD): </span><span class="out-n">True</span></div>
+    </div>
+  </div>
+
+  <div class="eigen-chart">
+    <div class="eigen-title">Eigenvalue spectrum — all positive confirms valid covariance matrix</div>
+    <div class="eigen-row"><span class="eigen-label">λ₁</span><div class="eigen-track"><div class="eigen-fill" style="width:9.9%"></div></div><span class="eigen-val">0.4995</span></div>
+    <div class="eigen-row"><span class="eigen-label">λ₂</span><div class="eigen-track"><div class="eigen-fill" style="width:11.7%"></div></div><span class="eigen-val">0.5861</span></div>
+    <div class="eigen-row"><span class="eigen-label">λ₃</span><div class="eigen-track"><div class="eigen-fill" style="width:38.2%"></div></div><span class="eigen-val">1.9199</span></div>
+    <div class="eigen-row"><span class="eigen-label">λ₄</span><div class="eigen-track"><div class="eigen-fill" style="width:100%"></div></div><span class="eigen-val">5.0245</span></div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-title">Why this breaks in practice</div>
+    <p style="margin:0;font-size:14px;color:var(--ink-soft);line-height:1.75;">
+      When you estimate a covariance matrix from real data with more assets than observations (common in large portfolios), the sample matrix can become singular or have near-zero eigenvalues — leading to numerically unstable, sometimes negative portfolio "risk" in downstream optimizations. This is precisely the problem shrinkage estimators solve.
+    </p>
+  </div>
+
+  <h2>Shrinkage Estimators — Taming Estimation Error</h2>
+  <p>The sample covariance matrix is noisy, especially with limited data or many assets. Shrinkage estimators blend the noisy sample matrix with a stable, structured target — dramatically improving real-world performance.</p>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <div class="code-lang">python — simple shrinkage estimator</div>
+    </div>
+    <pre><span class="c-cm"># Shrink sample covariance toward a diagonal target</span>
+<span class="c-var">target</span>    = np.<span class="c-fn">eye</span>(<span class="c-num">4</span>) * np.<span class="c-fn">trace</span>(sample_cov) / <span class="c-num">4</span>
+<span class="c-var">shrinkage</span> = <span class="c-num">0.2</span>   <span class="c-cm"># 20% weight to the stable target</span>
+
+<span class="c-var">shrunk_cov</span> = (<span class="c-num">1</span> - shrinkage) * sample_cov + shrinkage * target
+
+<span class="c-fn">print</span>(<span class="c-str">"Shrunk covariance matrix:"</span>)
+<span class="c-fn">print</span>(np.<span class="c-fn">round</span>(shrunk_cov, <span class="c-num">4</span>))</pre>
+  </div>
+
+  <div class="callout callout-green">
+    <div class="callout-title">Why practitioners always shrink</div>
+    <p style="margin:0;font-size:14px;color:var(--ink-soft);line-height:1.75;">
+      The Ledoit-Wolf shrinkage estimator (the industry-standard version of this idea) optimally chooses the shrinkage intensity to minimise expected estimation error. In practice, shrunk covariance matrices produce portfolio weights that are far more stable out-of-sample than raw sample covariance — because they reduce the impact of noisy, unreliable correlation estimates between less-liquid or newly listed assets.
+    </p>
+  </div>
+
+  <hr class="rule"/>
+
+  <div class="takeaway">
+    <div class="takeaway-title">Three things to remember from Day 14</div>
+    <p class="takeaway-body">Portfolio risk is a matrix problem, not a sum. Every serious portfolio construction technique — from Markowitz to risk parity — starts and ends with the covariance matrix.</p>
+    <ul class="takeaway-list">
+      <li>Portfolio variance = wᵀΣw. This single formula captures individual variances and every pairwise covariance at once. Correlation is not a footnote — it directly determines whether adding an asset helps or hurts your risk.</li>
+      <li>High positive correlation (0.65) added 27.9% more risk than the uncorrelated case would suggest. Negative correlation (−0.20) cut 7.6% of risk. True diversification requires assets that move differently, not just "more assets."</li>
+      <li>A valid covariance matrix must be positive semi-definite — all eigenvalues ≥ 0. With limited data or many assets, sample covariance can become unstable. Shrinkage estimators fix this by blending toward a stable structured target.</li>
+    </ul>
+  </div>
+
+  <div class="article-nav">
+    <a href="day13.html">
+      <span class="nav-dir">← Previous</span>
+      <span class="nav-title">Day 13: VAR &amp; VECM Models</span>
+    </a>
+    <a href="index.html" class="next">
+      <span class="nav-dir">All Articles</span>
+      <span class="nav-title">View Full 90-Day Series →</span>
+    </a>
+  </div>
+
+</div>
+
+<div class="article-footer">
+  <div class="footer-series">Quant Finance Notes — 90-Day Series</div>
+  <div class="footer-next">Tomorrow — Day 15: PCA — Dimensionality Reduction in Finance<br/>How to extract the hidden factors driving your portfolio</div>
+  <div class="footer-tags">
+    <span class="footer-tag">#QuantFinance</span>
+    <span class="footer-tag">#CovarianceMatrix</span>
+    <span class="footer-tag">#PortfolioRisk</span>
+    <span class="footer-tag">#Diversification</span>
+    <span class="footer-tag">#TradingMath</span>
+    <span class="footer-tag">#Python</span>
+    <span class="footer-tag">#Finance</span>
+    <span class="footer-tag">#SriLanka</span>
+    <span class="footer-tag">#Quant</span>
+    <span class="footer-tag">#LinearAlgebra</span>
+  </div>
+  <div class="footer-author">
+    Written by <strong>Nadun Sulochana</strong> &nbsp;·&nbsp; github.com/ns530 &nbsp;·&nbsp; nadunsulochana92@gmail.com
+  </div>
+</div>
+
+</body>
+</html>
